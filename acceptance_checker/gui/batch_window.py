@@ -42,7 +42,7 @@ _STATUS_COLORS = {
 class BatchWindow(QMainWindow):
     """接受拖放/選檔的批次驗收視窗。"""
 
-    COLUMNS = ["檔名", "狀態", "平均灰階", "均勻性", "SNR", "CNR", "背景std", "主要原因"]
+    COLUMNS = ["檔名", "狀態", "總分", "平均灰階", "均勻性", "SNR", "CNR", "背景std", "主要原因"]
 
     def __init__(self, thresholds: Optional[Thresholds] = None, parent=None):
         super().__init__(parent)
@@ -195,11 +195,12 @@ class BatchWindow(QMainWindow):
         if color is not None:
             status_item.setForeground(color)
         self.table.setItem(row, 1, status_item)
-        self.table.setItem(row, 2, QTableWidgetItem(f"{m.mean_gray:.1f}"))
-        self.table.setItem(row, 3, QTableWidgetItem(f"{m.uniformity_ratio:.3f}"))
-        self.table.setItem(row, 4, QTableWidgetItem(f"{m.signal_to_noise_ratio:.2f}"))
-        self.table.setItem(row, 5, QTableWidgetItem(f"{m.auto_defect_cnr_est:.2f}"))
-        self.table.setItem(row, 6, QTableWidgetItem(f"{m.bg_std_est:.2f}"))
+        self.table.setItem(row, 2, QTableWidgetItem(f"{m.quality_score:.1f}"))
+        self.table.setItem(row, 3, QTableWidgetItem(f"{m.mean_gray:.1f}"))
+        self.table.setItem(row, 4, QTableWidgetItem(f"{m.uniformity_ratio:.3f}"))
+        self.table.setItem(row, 5, QTableWidgetItem(f"{m.signal_to_noise_ratio:.2f}"))
+        self.table.setItem(row, 6, QTableWidgetItem(f"{m.auto_defect_cnr_est:.2f}"))
+        self.table.setItem(row, 7, QTableWidgetItem(f"{m.bg_std_est:.2f}"))
         reason = m.fail_reasons or m.warn_reasons or ""
         self.table.setItem(row, len(self.COLUMNS) - 1, QTableWidgetItem(reason))
 

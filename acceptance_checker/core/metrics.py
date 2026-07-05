@@ -47,6 +47,8 @@ class Metrics:
     horizontal_stripe_score: float = 0.0
     sharpness_laplacian_var: float = 0.0
 
+    quality_score: float = 0.0
+    score_breakdown: str = ""
     overall_status: str = "UNKNOWN"
     fail_reasons: str = ""
     warn_reasons: str = ""

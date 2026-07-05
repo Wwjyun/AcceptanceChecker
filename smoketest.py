@@ -394,11 +394,21 @@ def check_threshold_rejudge() -> None:
     )
     AcceptanceJudge(loose).judge(m)
     loose_status = m.overall_status
+    loose_score = m.quality_score
 
-    # 極嚴苛門檻 → 應 FAIL
-    strict = Thresholds(mean_gray_fail=999, bg_std_fail=0.0)
+    # 極嚴苛門檻 → 多個高權重項目失分後應進入 FAIL 分數區
+    strict = Thresholds(
+        mean_gray_fail=999, mean_gray_warn=999,
+        uniformity_fail=2.0, uniformity_warn=2.0,
+        cnr_fail=999, cnr_warn=999,
+        snr_fail=999, snr_warn=999,
+        bg_std_fail=0.0, bg_std_warn=0.0,
+        sharpness_fail=999, sharpness_warn=999,
+        hist_spread_fail=999, hist_spread_warn=999,
+    )
     AcceptanceJudge(strict).judge(m)
     assert m.overall_status == "FAIL", f"嚴苛門檻應 FAIL，實得 {m.overall_status}"
+    assert m.quality_score < loose_score, "嚴苛門檻分數應低於寬鬆門檻"
     assert loose_status != "FAIL", f"寬鬆門檻不應 FAIL，實得 {loose_status}"
 
 

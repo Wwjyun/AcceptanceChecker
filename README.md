@@ -1,6 +1,6 @@
 # AcceptanceChecker
 
-AcceptanceChecker is a Python AOI raw-image acceptance tool. It analyzes inspection images, computes image-quality and defect metrics, and classifies each image as `PASS`, `WARNING`, or `FAIL`.
+AcceptanceChecker is a Python AOI raw-image acceptance tool. It analyzes inspection images, computes image-quality and defect metrics, scores each image on a weighted 100-point scale, and classifies the score as `PASS`, `WARNING`, or `FAIL`.
 
 The project provides:
 
@@ -67,8 +67,8 @@ python -m acceptance_checker.cli --normalize percentile image16.tif
 
 CLI exit codes:
 
-- `0`: analysis completed with no `FAIL` results.
-- `1`: at least one image was classified as `FAIL`.
+- `0`: analysis completed with no images scoring below the `FAIL` band.
+- `1`: at least one image scored in the `FAIL` band.
 - `2`: command usage, file IO, threshold loading, or analysis error.
 
 ## Python API
@@ -82,6 +82,8 @@ pipeline = AcceptancePipeline(thresholds)
 result = pipeline.run("sample.bmp")
 
 print(result.metrics.overall_status)
+print(result.metrics.quality_score)
+print(result.metrics.score_breakdown)
 print(result.metrics.fail_reasons)
 overlay = result.overlay
 ```
@@ -99,6 +101,37 @@ The analyzer records:
 - Sharpness proxy: Laplacian variance.
 
 Default threshold fields are defined in `acceptance_checker/core/config.py` and mirrored in `thresholds.default.json`.
+
+## Weighted Scoring
+
+Each analyzed image receives a weighted score out of 100. Thresholds still define the per-metric bands, but they no longer act as a single-item veto:
+
+- A metric in the pass band receives its full weight.
+- A metric in the warning band receives half of its weight.
+- A metric in the fail band receives 0 for that metric.
+- If no automatic defect candidate is found, CNR is treated as a warning-band item because the image may be OK, but the tool cannot prove NG defect separation from automatic CNR alone.
+
+Default weights:
+
+| Metric | Weight |
+| --- | ---: |
+| Mean gray | 15 |
+| Uniformity min/max | 15 |
+| Low gray clipping | 10 |
+| High gray clipping | 10 |
+| Histogram spread P99-P01 | 10 |
+| Automatic defect CNR | 20 |
+| Whole-image SNR | 10 |
+| Background std proxy | 5 |
+| Sharpness Laplacian variance | 5 |
+
+Score bands:
+
+- `PASS`: score >= 80
+- `WARNING`: 60 <= score < 80
+- `FAIL`: score < 60
+
+The text report, GUI status, batch table, quiet CLI output, and CSV export include both `quality_score` and `score_breakdown`.
 
 ## Validation
 

@@ -14,9 +14,9 @@ class ReportBuilder:
     """把 Metrics 組成人類可讀的文字報告。"""
 
     STATUS_NOTE = {
-        "PASS": "通過：目前量測值未觸發主要風險門檻，可進入後續 AOI recipe 驗證。",
-        "WARNING": "警告：未達 FAIL，但已有指標接近風險區，量產前建議確認穩定性。",
-        "FAIL": "不合格：至少一項關鍵指標越過 FAIL 門檻，建議先修正成像條件再調整軟體。",
+        "PASS": "通過：加權總分達標，可進入後續 AOI recipe 驗證。",
+        "WARNING": "警告：加權總分落在觀察區，量產前建議確認穩定性。",
+        "FAIL": "需改善：加權總分低於建議區間，建議先修正成像條件再調整軟體。",
     }
 
     def __init__(self, recommendation_builder: RecommendationBuilder | None = None):
@@ -31,6 +31,8 @@ class ReportBuilder:
         report = f"""
 【總判定】
 狀態：{m.overall_status}
+加權總分：{m.quality_score:.1f} / 100
+加權明細：{m.score_breakdown if m.score_breakdown else "無"}
 說明：{note}
 
 【檔案資訊】
@@ -105,8 +107,8 @@ Laplacian variance：{m.sharpness_laplacian_var:.3f}
             f"< {t.sharpness_warn}：WARNING\n"
             f"- 灰階展開 P99-P01 < {t.hist_spread_fail}：FAIL；"
             f"< {t.hist_spread_warn}：WARNING\n"
-            "\n判定邏輯：任一 FAIL 項目會讓總判定成為 FAIL；沒有 FAIL 但有 WARNING "
-            "項目則為 WARNING；全部指標都未觸發才是 PASS。\n"
+            "\n加權邏輯：各項權重合計 100 分；PASS 區拿滿分、WARNING 區拿半分、"
+            "FAIL 區拿 0 分。總分 >= 80 為 PASS，60-79.9 為 WARNING，< 60 為 FAIL。\n"
             "注意：CNR 是自動估算。NG 圖建議後續用人工 ROI 量測確認缺陷與背景分離度。"
         )
 
@@ -114,23 +116,25 @@ Laplacian variance：{m.sharpness_laplacian_var:.3f}
         fail_items = self._split_reasons(m.fail_reasons)
         warn_items = self._split_reasons(m.warn_reasons)
         lines: List[str] = [
-            "判定邏輯：任一 FAIL 門檻觸發即列為 FAIL；沒有 FAIL 但有 WARNING "
-            "項目時列為 WARNING；全部未觸發才列為 PASS。",
+            "判定邏輯：各項指標依權重加總為 100 分；PASS 區拿滿分、WARNING 區拿半分、"
+            "FAIL 區拿 0 分。總分 >= 80 為 PASS，60-79.9 為 WARNING，< 60 為 FAIL。",
         ]
+        lines.append(f"加權總分：{m.quality_score:.1f} / 100")
+        lines.append(f"加權明細：{m.score_breakdown if m.score_breakdown else '無'}")
 
         if m.overall_status == "FAIL":
             lines.append(
-                "本次結果為 FAIL，代表目前影像品質已有項目低於可接受下限，"
-                "不建議只靠後段 AOI recipe 補償。"
+                "本次結果為 FAIL，代表加權總分低於建議區間，"
+                "建議先處理成像條件，再進一步調整 AOI recipe。"
             )
         elif m.overall_status == "WARNING":
             lines.append(
-                "本次結果為 WARNING，代表影像仍可能可用，但穩定度或安全裕度不足，"
+                "本次結果為 WARNING，代表影像仍可能可用，但加權總分或安全裕度不足，"
                 "建議用更多 OK/NG 樣本確認誤判與漏判風險。"
             )
         elif m.overall_status == "PASS":
             lines.append(
-                "本次結果為 PASS，代表目前量測值都在設定門檻內；仍建議搭配實際 OK/NG "
+                "本次結果為 PASS，代表加權總分已達標；仍建議搭配實際 OK/NG "
                 "樣本確認 recipe 視窗。"
             )
 

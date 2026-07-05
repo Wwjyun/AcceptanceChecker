@@ -129,7 +129,7 @@ def _report_and_export(
 
         results.append(m)
         if args.quiet:
-            print(f"{m.overall_status}\t{m.file_name}")
+            print(f"{m.overall_status}\t{m.quality_score:.1f}\t{m.file_name}")
         else:
             print(report_builder.build(m, thresholds))
             print("-" * 60)
