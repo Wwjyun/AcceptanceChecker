@@ -1,0 +1,19 @@
+{
+  "bg_std_fail": 10.0,
+  "bg_std_warn": 6.0,
+  "clipping_fail_pct": 1.0,
+  "clipping_warn_pct": 0.1,
+  "cnr_fail": 3.0,
+  "cnr_warn": 5.0,
+  "hist_spread_fail": 15.0,
+  "hist_spread_warn": 30.0,
+  "mean_gray_fail": 30.0,
+  "mean_gray_warn": 50.0,
+  "sharpness_fail": 20.0,
+  "sharpness_warn": 50.0,
+  "snr_fail": 10.0,
+  "snr_warn": 20.0,
+  "uniformity_fail": 0.5,
+  "uniformity_good": 0.85,
+  "uniformity_warn": 0.7
+}

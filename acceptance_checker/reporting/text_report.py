@@ -33,6 +33,7 @@ class ReportBuilder:
 路徑：{m.file_path}
 尺寸：{m.width_px} x {m.height_px} px
 原始 dtype：{m.dtype}
+正規化方式：{m.norm_method}
 分析取樣 step：{m.analysis_step}
 
 【整體灰階】
@@ -58,6 +59,7 @@ P99-P01 灰階展開：{m.hist_spread_p99_p01:.1f}
 最佳候選 contrast：{m.auto_defect_contrast_est:.3f}
 最佳候選 sampled area：{m.auto_defect_area_px_sampled}
 robust noise sigma：{m.robust_noise_sigma:.3f}
+整體 SNR：{m.signal_to_noise_ratio:.3f}
 
 【背景與條紋風險】
 背景 std proxy：{m.bg_std_est:.3f}
@@ -83,9 +85,10 @@ Laplacian variance：{m.sharpness_laplacian_var:.3f}
 1. 平均灰階太低，代表進光量或相機感度不足，軟體只能硬拉。
 2. 均勻性太差，代表 700 mm 寬度下左中右亮度不一致，後續 threshold / recipe 會不穩。
 3. CNR 太低，代表缺陷和背景不可分，這比單純 SNR 更接近 AOI 可檢性。
-4. 背景 std 太高，代表正常紋理或雜訊會增加誤判。
-5. clipping 太高代表資訊已經被壓死或過曝，後處理無法真正救回。
-6. 清晰度 proxy 太低時，200 µm 缺陷可能被對焦或運動模糊吃掉。
+4. SNR 太低，代表整體信號相對背景雜訊不足，後續拉亮會同步放大雜訊。
+5. 背景 std 太高，代表正常紋理或雜訊會增加誤判。
+6. clipping 太高代表資訊已經被壓死或過曝，後處理無法真正救回。
+7. 清晰度 proxy 太低時，200 µm 缺陷可能被對焦或運動模糊吃掉。
 """
         return report.strip()
 
@@ -97,6 +100,7 @@ Laplacian variance：{m.sharpness_laplacian_var:.3f}
             f"- 均勻性 min/max < {t.uniformity_fail}：FAIL；< {t.uniformity_warn}：WARNING\n"
             f"- clipping > {t.clipping_fail_pct}%：FAIL；> {t.clipping_warn_pct}%：WARNING\n"
             f"- CNR < {t.cnr_fail}：FAIL；< {t.cnr_warn}：WARNING\n"
+            f"- SNR < {t.snr_fail}：FAIL；< {t.snr_warn}：WARNING\n"
             f"- 背景 std > {t.bg_std_fail}：FAIL；> {t.bg_std_warn}：WARNING\n"
             f"- 清晰度 Laplacian Var < {t.sharpness_fail}：FAIL；"
             f"< {t.sharpness_warn}：WARNING\n"
@@ -139,6 +143,7 @@ Laplacian variance：{m.sharpness_laplacian_var:.3f}
             f"均勻性 FAIL<{t.uniformity_fail}/WARNING<{t.uniformity_warn}；"
             f"clipping FAIL>{t.clipping_fail_pct}%/WARNING>{t.clipping_warn_pct}%；"
             f"CNR FAIL<{t.cnr_fail}/WARNING<{t.cnr_warn}；"
+            f"SNR FAIL<{t.snr_fail}/WARNING<{t.snr_warn}；"
             f"背景 std FAIL>{t.bg_std_fail}/WARNING>{t.bg_std_warn}；"
             f"清晰度 FAIL<{t.sharpness_fail}/WARNING<{t.sharpness_warn}；"
             f"灰階展開 FAIL<{t.hist_spread_fail}/WARNING<{t.hist_spread_warn}。"
@@ -190,6 +195,13 @@ Laplacian variance：{m.sharpness_laplacian_var:.3f}
                 "太窄代表有效灰階動態範圍不足，OK/NG 差異會更難切開。",
             ),
             f"CNR：{cnr_note}",
+            self._lower_limit_note(
+                "整體 SNR",
+                m.signal_to_noise_ratio,
+                t.snr_warn,
+                t.snr_fail,
+                "代表平均灰階相對 robust noise sigma 的安全裕度；太低時整體訊號會被雜訊吃掉。",
+            ),
             self._upper_limit_note(
                 "背景 std proxy",
                 m.bg_std_est,

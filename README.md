@@ -93,7 +93,7 @@ The analyzer records:
 - Basic intensity: mean, standard deviation, min/max, P01/P99, histogram spread.
 - Clipping: low and high clipping percentage.
 - Uniformity: five-zone brightness means and min/max uniformity ratio.
-- Noise: background standard deviation and robust noise sigma.
+- Noise: background standard deviation, robust noise sigma, and whole-image SNR.
 - Defect proxy: automatic candidate count, sampled area, CNR, and contrast.
 - Pattern proxy: vertical and horizontal stripe score.
 - Sharpness proxy: Laplacian variance.

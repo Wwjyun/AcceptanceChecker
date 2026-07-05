@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "acceptance-checker"
+version = "0.1.0"
+description = "AOI Raw Image 光學驗收檢查工具（亮度/均勻性/CNR/背景雜訊 → PASS/WARNING/FAIL）"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+dependencies = [
+    "opencv-python>=4.5",
+    "numpy>=1.21",
+    "PySide6>=6.5",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "ruff>=0.1",
+    "mypy>=1.0",
+]
+
+[project.scripts]
+acceptance-checker-cli = "acceptance_checker.cli.batch:main"
+
+[project.gui-scripts]
+acceptance-checker = "acceptance_checker.gui:run_app"
+
+[tool.setuptools.packages.find]
+include = ["acceptance_checker*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+extend-exclude = ["env", "__pycache__"]
+
+[tool.ruff.lint]
+# 只選正確性/一致性相關規則；不啟用 UP（pyupgrade），因專案沿用 utf-8 標頭
+# 與 typing.List/Optional 註記風格。
+select = ["E", "F", "W", "I", "B", "N"]
+ignore = ["N802"]  # Qt 覆寫方法（resizeEvent 等）必須用駝峰命名
+
+[tool.mypy]
+python_version = "3.9"
+ignore_missing_imports = true
+warn_unused_ignores = false
+exclude = ["env/", "build/"]

@@ -56,6 +56,11 @@ class AcceptanceJudge:
         else:
             warn.append("未找到明顯異常候選區；若這是 NG 圖，代表缺陷訊號可能不足")
 
+        if m.signal_to_noise_ratio < t.snr_fail:
+            fail.append(f"整體 SNR 過低：{m.signal_to_noise_ratio:.2f} < {t.snr_fail}")
+        elif m.signal_to_noise_ratio < t.snr_warn:
+            warn.append(f"整體 SNR 偏低：{m.signal_to_noise_ratio:.2f} < {t.snr_warn}")
+
         if m.bg_std_est > t.bg_std_fail:
             fail.append(f"背景 std / 紋理偏高：{m.bg_std_est:.2f} > {t.bg_std_fail}")
         elif m.bg_std_est > t.bg_std_warn:

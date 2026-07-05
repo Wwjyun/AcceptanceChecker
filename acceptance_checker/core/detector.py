@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import List, Optional, Tuple
 
 import cv2
@@ -20,6 +20,78 @@ class DefectResult:
     candidate_count: int = 0
     overlay: Optional[np.ndarray] = None
     robust_noise_sigma: float = 0.0
+
+
+@dataclass
+class RoiCnrResult:
+    """人工框選 ROI 的 CNR 量測結果。"""
+
+    defect_mean: float = 0.0
+    bg_mean: float = 0.0
+    contrast: float = 0.0
+    bg_std: float = 0.0
+    cnr: float = 0.0
+    defect_area_px: int = 0
+    bg_area_px: int = 0
+
+
+def roi_cnr(image: np.ndarray, rect: Tuple[int, int, int, int], ring_pad: int = 0) -> RoiCnrResult:
+    """量測人工框選 ROI 的 CNR。
+
+    比自動 CNR 準確：缺陷區用使用者框選的矩形（rect=(x, y, w, h)），
+    背景取框外一圈 ring（ring_pad<=0 時自動取 max(w, h) 的一半，夾在 8~80）。
+    CNR = |缺陷平均 - 背景平均| / 背景 std。
+
+    座標會被夾回影像範圍；ROI 落在影像外或面積為 0 時回傳全 0 結果。
+    """
+    if image.ndim != 2:
+        raise ValueError("roi_cnr 只接受單通道灰階影像")
+
+    h, w = image.shape[:2]
+    x, y, rw, rh = (int(v) for v in rect)
+
+    # 夾回影像範圍
+    x1 = max(0, min(x, w))
+    y1 = max(0, min(y, h))
+    x2 = max(0, min(x + rw, w))
+    y2 = max(0, min(y + rh, h))
+    if x2 <= x1 or y2 <= y1:
+        return RoiCnrResult()
+
+    img = image.astype(np.float32)
+    defect_vals = img[y1:y2, x1:x2].reshape(-1)
+
+    pad = ring_pad if ring_pad > 0 else int(max(8, min(80, max(x2 - x1, y2 - y1) * 0.5)))
+    bx1 = max(0, x1 - pad)
+    by1 = max(0, y1 - pad)
+    bx2 = min(w, x2 + pad)
+    by2 = min(h, y2 + pad)
+
+    # ring = 外框內、扣掉 ROI 本身
+    ring = img[by1:by2, bx1:bx2].copy()
+    ring_mask = np.ones(ring.shape, dtype=bool)
+    ring_mask[y1 - by1:y2 - by1, x1 - bx1:x2 - bx1] = False
+    bg_vals = ring[ring_mask]
+    if bg_vals.size < 20:  # ring 太薄（ROI 幾乎滿版）→ 退回用全圖扣 ROI
+        full_mask = np.ones(img.shape, dtype=bool)
+        full_mask[y1:y2, x1:x2] = False
+        bg_vals = img[full_mask]
+
+    defect_mean = float(np.mean(defect_vals))
+    bg_mean = float(np.mean(bg_vals)) if bg_vals.size else 0.0
+    bg_std = float(np.std(bg_vals)) if bg_vals.size else 0.0
+    contrast = abs(defect_mean - bg_mean)
+    cnr = contrast / max(bg_std, 1e-6)
+
+    return RoiCnrResult(
+        defect_mean=defect_mean,
+        bg_mean=bg_mean,
+        contrast=contrast,
+        bg_std=bg_std,
+        cnr=cnr,
+        defect_area_px=int(defect_vals.size),
+        bg_area_px=int(bg_vals.size),
+    )
 
 
 class DefectDetector:

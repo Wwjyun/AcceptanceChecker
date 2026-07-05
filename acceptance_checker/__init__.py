@@ -9,6 +9,8 @@ AOI Raw Image 光學驗收檢查工具 (OOP 版)
 - cli       : 命令列批次工具
 """
 
+__version__ = "0.1.0"
+
 from .core import (
     AcceptanceJudge,
     AcceptancePipeline,

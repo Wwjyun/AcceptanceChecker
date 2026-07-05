@@ -3,7 +3,7 @@
 
 from .analyzer import ImageAnalyzer
 from .config import Thresholds
-from .detector import DefectDetector, DefectResult
+from .detector import DefectDetector, DefectResult, RoiCnrResult, roi_cnr
 from .image import RawImage
 from .judge import AcceptanceJudge
 from .metrics import Metrics
@@ -14,6 +14,8 @@ __all__ = [
     "Thresholds",
     "DefectDetector",
     "DefectResult",
+    "RoiCnrResult",
+    "roi_cnr",
     "RawImage",
     "AcceptanceJudge",
     "Metrics",

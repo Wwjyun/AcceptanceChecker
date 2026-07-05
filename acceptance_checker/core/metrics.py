@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """影像指標資料結構。"""
 
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 
 
 @dataclass
@@ -13,6 +13,7 @@ class Metrics:
     width_px: int = 0
     height_px: int = 0
     dtype: str = ""
+    norm_method: str = ""
     analysis_step: int = 1
 
     mean_gray: float = 0.0
@@ -35,6 +36,7 @@ class Metrics:
 
     bg_std_est: float = 0.0
     robust_noise_sigma: float = 0.0
+    signal_to_noise_ratio: float = 0.0
 
     auto_defect_cnr_est: float = 0.0
     auto_defect_contrast_est: float = 0.0

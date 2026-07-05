@@ -1,0 +1,8 @@
+env/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+acceptance_checker.egg-info/
+build/
+dist/

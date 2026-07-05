@@ -17,13 +17,19 @@ from .metrics import Metrics
 class ImageAnalyzer:
     """計算單張影像的所有驗收指標（不做判定）。"""
 
-    def __init__(self, zone_count: int = 5, detector: DefectDetector | None = None):
+    def __init__(
+        self,
+        zone_count: int = 5,
+        detector: DefectDetector | None = None,
+        max_pixels: int = 8_000_000,
+    ):
         self.zone_count = zone_count
         self.detector = detector or DefectDetector()
+        self.max_pixels = max_pixels
 
     def analyze(self, raw: RawImage, file_path: str) -> Tuple[Metrics, np.ndarray, DefectResult]:
         """回傳 (metrics, sample, defect_result)。"""
-        sample, step = raw.analysis_sample()
+        sample, step = raw.analysis_sample(self.max_pixels)
 
         m = Metrics()
         m.file_name = os.path.basename(file_path)
@@ -31,6 +37,7 @@ class ImageAnalyzer:
         m.width_px = raw.width
         m.height_px = raw.height
         m.dtype = raw.original_dtype
+        m.norm_method = raw.norm_method
         m.analysis_step = int(step)
 
         self._fill_gray_stats(m, sample)
@@ -42,6 +49,7 @@ class ImageAnalyzer:
         m.auto_defect_area_px_sampled = defect.best_area_px
         m.auto_defect_count = defect.candidate_count
         m.robust_noise_sigma = defect.robust_noise_sigma
+        m.signal_to_noise_ratio = self._signal_to_noise_ratio(m.mean_gray, m.robust_noise_sigma)
 
         vs, hs = self._stripe_scores(sample)
         m.vertical_stripe_score = vs
@@ -81,6 +89,10 @@ class ImageAnalyzer:
             m.zone_5_right_mean,
         ) = [float(x) for x in zones[:5]]
         m.uniformity_ratio = float(ratio)
+
+    @staticmethod
+    def _signal_to_noise_ratio(signal: float, noise_sigma: float) -> float:
+        return float(signal / max(noise_sigma, 1e-6))
 
     def _zone_means(self, sample: np.ndarray) -> Tuple[List[float], float]:
         h, w = sample.shape[:2]
