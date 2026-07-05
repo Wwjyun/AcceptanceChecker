@@ -1,4 +1,5 @@
-# AOI Raw Image 光學驗收檢查工具 相依套件
+# Runtime dependencies for AcceptanceChecker.
+# For development tools, prefer: pip install -e ".[dev]"
 opencv-python>=4.5
 numpy>=1.21
 PySide6>=6.5
