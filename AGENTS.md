@@ -17,6 +17,14 @@ Prefer existing project patterns over new abstractions. Keep core logic independ
 
 ## Dependency Rules
 
+Use the repository virtual environment as the source of truth:
+
+```powershell
+.\env\Scripts\python.exe -m pip install -e ".[dev]"
+```
+
+Run project commands through `.\env\Scripts\python.exe`. Fall back to system Python only if `env` is missing and the user explicitly accepts that fallback.
+
 Runtime dependencies belong in `requirements.txt` and `[project].dependencies` in `pyproject.toml`.
 
 Development dependencies belong in `[project.optional-dependencies].dev`.
@@ -45,8 +53,8 @@ The validation script installs editable dev dependencies, runs compile checks, R
 If iterating quickly, at minimum run:
 
 ```powershell
-python -m compileall -q acceptance_checker tests main.py smoketest.py
-python -m pytest -q
+.\env\Scripts\python.exe -m compileall -q acceptance_checker tests main.py smoketest.py
+.\env\Scripts\python.exe -m pytest -q
 ```
 
 Treat Mypy as advisory while CI has `continue-on-error: true`; still report its failure reason.
@@ -84,8 +92,8 @@ When the user asks to package, 打包, release, or git release:
 4. Build:
 
 ```powershell
-python -m pip install build
-python -m build
+.\env\Scripts\python.exe -m pip install build
+.\env\Scripts\python.exe -m build
 ```
 
 5. Create an annotated tag `v<version>` if missing.
