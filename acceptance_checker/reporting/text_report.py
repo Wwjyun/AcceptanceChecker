@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+from typing import List, Optional
+
 from ..core.config import Thresholds
 from ..core.metrics import Metrics
 
@@ -11,13 +13,16 @@ class ReportBuilder:
     """把 Metrics 組成人類可讀的文字報告。"""
 
     STATUS_NOTE = {
-        "PASS": "通過：raw image 指標目前未觸發主要風險。",
-        "WARNING": "警告：影像可嘗試，但有量產穩定風險。",
-        "FAIL": "不合格：建議回到光學/相機/光源條件修正，不應直接丟給軟體背鍋。",
+        "PASS": "通過：目前量測值未觸發主要風險門檻，可進入後續 AOI recipe 驗證。",
+        "WARNING": "警告：未達 FAIL，但已有指標接近風險區，量產前建議確認穩定性。",
+        "FAIL": "不合格：至少一項關鍵指標越過 FAIL 門檻，建議先修正成像條件再調整軟體。",
     }
 
-    def build(self, m: Metrics) -> str:
+    def build(self, m: Metrics, thresholds: Optional[Thresholds] = None) -> str:
+        t = thresholds or Thresholds()
         note = self.STATUS_NOTE.get(m.overall_status, "")
+        judgement = self._judgement_explanation(m, t)
+        metric_notes = self._metric_notes(m, t)
         report = f"""
 【總判定】
 狀態：{m.overall_status}
@@ -68,6 +73,12 @@ Laplacian variance：{m.sharpness_laplacian_var:.3f}
 【WARNING 原因】
 {m.warn_reasons if m.warn_reasons else "無"}
 
+【判讀說明】
+{judgement}
+
+【逐項指標解讀】
+{metric_notes}
+
 【工程解讀】
 1. 平均灰階太低，代表進光量或相機感度不足，軟體只能硬拉。
 2. 均勻性太差，代表 700 mm 寬度下左中右亮度不一致，後續 threshold / recipe 會不穩。
@@ -87,5 +98,151 @@ Laplacian variance：{m.sharpness_laplacian_var:.3f}
             f"- clipping > {t.clipping_fail_pct}%：FAIL；> {t.clipping_warn_pct}%：WARNING\n"
             f"- CNR < {t.cnr_fail}：FAIL；< {t.cnr_warn}：WARNING\n"
             f"- 背景 std > {t.bg_std_fail}：FAIL；> {t.bg_std_warn}：WARNING\n"
-            "\n注意：CNR 是自動估算。NG 圖建議後續加手動畫 ROI 版本做更準。"
+            f"- 清晰度 Laplacian Var < {t.sharpness_fail}：FAIL；"
+            f"< {t.sharpness_warn}：WARNING\n"
+            f"- 灰階展開 P99-P01 < {t.hist_spread_fail}：FAIL；"
+            f"< {t.hist_spread_warn}：WARNING\n"
+            "\n判定邏輯：任一 FAIL 項目會讓總判定成為 FAIL；沒有 FAIL 但有 WARNING "
+            "項目則為 WARNING；全部指標都未觸發才是 PASS。\n"
+            "注意：CNR 是自動估算。NG 圖建議後續用人工 ROI 量測確認缺陷與背景分離度。"
         )
+
+    def _judgement_explanation(self, m: Metrics, t: Thresholds) -> str:
+        fail_items = self._split_reasons(m.fail_reasons)
+        warn_items = self._split_reasons(m.warn_reasons)
+        lines: List[str] = [
+            "判定邏輯：任一 FAIL 門檻觸發即列為 FAIL；沒有 FAIL 但有 WARNING "
+            "項目時列為 WARNING；全部未觸發才列為 PASS。",
+        ]
+
+        if m.overall_status == "FAIL":
+            lines.append(
+                "本次結果為 FAIL，代表目前影像品質已有項目低於可接受下限，"
+                "不建議只靠後段 AOI recipe 補償。"
+            )
+        elif m.overall_status == "WARNING":
+            lines.append(
+                "本次結果為 WARNING，代表影像仍可能可用，但穩定度或安全裕度不足，"
+                "建議用更多 OK/NG 樣本確認誤判與漏判風險。"
+            )
+        elif m.overall_status == "PASS":
+            lines.append(
+                "本次結果為 PASS，代表目前量測值都在設定門檻內；仍建議搭配實際 OK/NG "
+                "樣本確認 recipe 視窗。"
+            )
+
+        lines.append(f"FAIL 項目：{self._format_reason_items(fail_items)}")
+        lines.append(f"WARNING 項目：{self._format_reason_items(warn_items)}")
+        lines.append(
+            "目前使用門檻："
+            f"平均灰階 FAIL<{t.mean_gray_fail}/WARNING<{t.mean_gray_warn}；"
+            f"均勻性 FAIL<{t.uniformity_fail}/WARNING<{t.uniformity_warn}；"
+            f"clipping FAIL>{t.clipping_fail_pct}%/WARNING>{t.clipping_warn_pct}%；"
+            f"CNR FAIL<{t.cnr_fail}/WARNING<{t.cnr_warn}；"
+            f"背景 std FAIL>{t.bg_std_fail}/WARNING>{t.bg_std_warn}；"
+            f"清晰度 FAIL<{t.sharpness_fail}/WARNING<{t.sharpness_warn}；"
+            f"灰階展開 FAIL<{t.hist_spread_fail}/WARNING<{t.hist_spread_warn}。"
+        )
+        return "\n".join(lines)
+
+    def _metric_notes(self, m: Metrics, t: Thresholds) -> str:
+        low_clip_state = self._upper_limit_state(
+            m.low_clip_pct, t.clipping_warn_pct, t.clipping_fail_pct
+        )
+        high_clip_state = self._upper_limit_state(
+            m.high_clip_pct, t.clipping_warn_pct, t.clipping_fail_pct
+        )
+        cnr_note = (
+            "未找到候選缺陷，因此 CNR 不能證明 NG 缺陷可被穩定分離；"
+            "若此圖應為 OK，這通常不是問題。"
+            if m.auto_defect_count == 0
+            else f"最佳候選 CNR 為 {m.auto_defect_cnr_est:.2f}，"
+            "代表候選缺陷相對背景雜訊的可分離程度。"
+        )
+        lines = [
+            self._lower_limit_note(
+                "平均灰階",
+                m.mean_gray,
+                t.mean_gray_warn,
+                t.mean_gray_fail,
+                "過低時代表進光量不足，後續拉亮會同步放大雜訊。",
+            ),
+            self._lower_limit_note(
+                "均勻性 min/max",
+                m.uniformity_ratio,
+                t.uniformity_warn,
+                t.uniformity_fail,
+                "越接近 1 代表左右分區越一致；太低會讓固定門檻在不同位置表現不一致。",
+            ),
+            (
+                f"低灰階 clipping：{m.low_clip_pct:.4f}%（{low_clip_state}）。"
+                "數值偏高代表暗部資訊被壓到 0 附近，暗缺陷或背景差異可能消失。"
+            ),
+            (
+                f"高灰階 clipping：{m.high_clip_pct:.4f}%（{high_clip_state}）。"
+                "數值偏高代表亮部過曝，亮缺陷或材質差異可能被截斷。"
+            ),
+            self._lower_limit_note(
+                "P99-P01 灰階展開",
+                m.hist_spread_p99_p01,
+                t.hist_spread_warn,
+                t.hist_spread_fail,
+                "太窄代表有效灰階動態範圍不足，OK/NG 差異會更難切開。",
+            ),
+            f"CNR：{cnr_note}",
+            self._upper_limit_note(
+                "背景 std proxy",
+                m.bg_std_est,
+                t.bg_std_warn,
+                t.bg_std_fail,
+                "越高代表背景紋理或雜訊越強，容易增加誤判。",
+            ),
+            self._lower_limit_note(
+                "清晰度 Laplacian Var",
+                m.sharpness_laplacian_var,
+                t.sharpness_warn,
+                t.sharpness_fail,
+                "偏低時可能是對焦、震動或運動模糊，細小缺陷會被抹平。",
+            ),
+        ]
+        return "\n".join(f"- {line}" for line in lines)
+
+    def _split_reasons(self, text: str) -> List[str]:
+        return [item.strip() for item in text.split("；") if item.strip()]
+
+    def _format_reason_items(self, items: List[str]) -> str:
+        if not items:
+            return "無"
+        return "；".join(items)
+
+    def _lower_limit_note(
+        self, label: str, value: float, warn_limit: float, fail_limit: float, detail: str
+    ) -> str:
+        state = self._lower_limit_state(value, warn_limit, fail_limit)
+        return (
+            f"{label}：{value:.3f}（{state}；FAIL<{fail_limit}，WARNING<{warn_limit}）。"
+            f"{detail}"
+        )
+
+    def _upper_limit_note(
+        self, label: str, value: float, warn_limit: float, fail_limit: float, detail: str
+    ) -> str:
+        state = self._upper_limit_state(value, warn_limit, fail_limit)
+        return (
+            f"{label}：{value:.3f}（{state}；FAIL>{fail_limit}，WARNING>{warn_limit}）。"
+            f"{detail}"
+        )
+
+    def _lower_limit_state(self, value: float, warn_limit: float, fail_limit: float) -> str:
+        if value < fail_limit:
+            return "FAIL 區"
+        if value < warn_limit:
+            return "WARNING 區"
+        return "通過區"
+
+    def _upper_limit_state(self, value: float, warn_limit: float, fail_limit: float) -> str:
+        if value > fail_limit:
+            return "FAIL 區"
+        if value > warn_limit:
+            return "WARNING 區"
+        return "通過區"
