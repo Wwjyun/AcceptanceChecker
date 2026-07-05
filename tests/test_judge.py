@@ -121,3 +121,31 @@ def test_multiple_failed_metrics_can_enter_fail_score_band():
     assert m.overall_status == "FAIL"
     assert m.quality_score == 20.0
     assert "平均灰階 0/15" in m.score_breakdown
+    assert m.risk_level == "量產導入風險極高"  # 20 < 預設 critical_score(30)
+
+
+def test_fail_above_critical_score_is_high_not_critical():
+    m = _healthy_metrics()
+    m.mean_gray = 10.0  # 唯一觸發 fail 的項目：扣 15 分 → 85 分仍是 PASS
+    m.signal_to_noise_ratio = 5.0  # 再扣 10 分 → 75 分，落入 WARNING 分數區
+    m.uniformity_ratio = 0.2  # 再扣 15 分 → 60 分，剛好在 WARNING/FAIL 邊界
+    m.low_clip_pct = 5.0  # 再扣 10 分 → 50 分，進入 FAIL 分數區但高於 critical_score(30)
+    AcceptanceJudge().judge(m)
+    assert m.overall_status == "FAIL"
+    assert m.quality_score == 50.0
+    assert m.risk_level == "量產導入風險高"
+
+
+def test_custom_critical_score_threshold():
+    m = _healthy_metrics()
+    m.mean_gray = 10.0
+    m.uniformity_ratio = 0.2
+    m.low_clip_pct = 5.0
+    m.high_clip_pct = 5.0
+    m.auto_defect_cnr_est = 1.0
+    m.signal_to_noise_ratio = 5.0
+    # 分數固定為 20；把 critical_score 調低到 10，20 分應不再算「極高」
+    lenient = Thresholds(critical_score=10.0)
+    AcceptanceJudge(lenient).judge(m)
+    assert m.quality_score == 20.0
+    assert m.risk_level == "量產導入風險高"

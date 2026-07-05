@@ -3,11 +3,13 @@
 
 from .csv_export import CsvExporter
 from .drift_report import DriftReport, DriftReporter, DriftStats
+from .history_log import HistoryLogger
 from .recommendations import Recommendation, RecommendationBuilder
 from .text_report import ReportBuilder
 
 __all__ = [
     "CsvExporter",
+    "HistoryLogger",
     "Recommendation",
     "RecommendationBuilder",
     "ReportBuilder",

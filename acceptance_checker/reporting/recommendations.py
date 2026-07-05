@@ -3,8 +3,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import List
+from dataclasses import dataclass, field
+from typing import Dict, List, Tuple
 
 from ..core.config import Thresholds
 from ..core.metrics import Metrics
@@ -12,20 +12,47 @@ from ..core.metrics import Metrics
 
 @dataclass(frozen=True)
 class Recommendation:
-    """單一工程建議項目。"""
+    """單一工程建議項目。
+
+    labels 記錄此建議對應到哪些加權評分項目（見 ``AcceptanceJudge.SCORE_WEIGHTS``），
+    只用於排序，不會出現在輸出文字裡。反正一定要放行，這裡的排序邏輯讓報告
+    優先列出「扣最多分」的項目，方便工程師知道要先修哪個。
+    """
 
     title: str
     action: str
+    labels: Tuple[str, ...] = field(default_factory=tuple)
 
     def format(self) -> str:
         return f"{self.title}：{self.action}"
+
+
+def _parse_score_deficits(score_breakdown: str) -> Dict[str, float]:
+    """把 ``Metrics.score_breakdown``（如「平均灰階 7.5/15；CNR 0/20」）轉成扣分表。
+
+    扣分 = 權重 - 實得分數；找不到或格式不符的項目一律當作 0 分扣分（排序時墊底）。
+    """
+    deficits: Dict[str, float] = {}
+    if not score_breakdown:
+        return deficits
+    for item in score_breakdown.split("；"):
+        item = item.strip()
+        if not item:
+            continue
+        try:
+            name, frac = item.rsplit(" ", 1)
+            points_str, weight_str = frac.split("/", 1)
+            deficits[name] = float(weight_str) - float(points_str)
+        except (ValueError, IndexError):
+            continue
+    return deficits
 
 
 class RecommendationBuilder:
     """把 Metrics 與 Thresholds 轉成硬體/製程調整方向。"""
 
     def build(self, m: Metrics, thresholds: Thresholds) -> str:
-        recommendations = self.recommend(m, thresholds)
+        recommendations = self._rank(self.recommend(m, thresholds), m.score_breakdown)
         return "\n".join(f"{idx}. {item.format()}" for idx, item in enumerate(recommendations, 1))
 
     def recommend(self, m: Metrics, t: Thresholds) -> List[Recommendation]:
@@ -47,6 +74,17 @@ class RecommendationBuilder:
             )
         return items
 
+    def _rank(
+        self, items: List[Recommendation], score_breakdown: str
+    ) -> List[Recommendation]:
+        """依每項建議對應指標的扣分，由大到小排序（穩定排序，同分維持原順序）。"""
+        deficits = _parse_score_deficits(score_breakdown)
+
+        def deficit_of(rec: Recommendation) -> float:
+            return max((deficits.get(label, 0.0) for label in rec.labels), default=0.0)
+
+        return sorted(items, key=deficit_of, reverse=True)
+
     def _add_exposure_recommendations(
         self, items: List[Recommendation], m: Metrics, t: Thresholds
     ) -> None:
@@ -56,6 +94,7 @@ class RecommendationBuilder:
                     "亮部 clipping 偏高",
                     "先降低曝光時間或光源亮度；若仍過曝，再降低相機 gain。"
                     "目標是讓高灰階 clipping 低於 warning 門檻，避免亮部資訊被截斷。",
+                    labels=("高灰階 clipping",),
                 )
             )
             return
@@ -66,6 +105,7 @@ class RecommendationBuilder:
                     "整體亮度不足",
                     "優先提高光源亮度，其次延長曝光時間；只有在曝光與光源受限時才提高 gain。"
                     "調整後確認平均灰階高於 warning 門檻，且高灰階 clipping 不超標。",
+                    labels=("平均灰階", "低灰階 clipping"),
                 )
             )
 
@@ -75,6 +115,7 @@ class RecommendationBuilder:
                     "灰階動態範圍偏窄",
                     "調整光源角度、曝光或 16-bit 轉 8-bit 正規化方式，讓 P01 到 P99 的展開變大；"
                     "避免只靠後處理硬拉對比。",
+                    labels=("灰階展開",),
                 )
             )
 
@@ -98,6 +139,7 @@ class RecommendationBuilder:
                 "分區均勻性不足",
                 f"{darkest}偏暗、{brightest}偏亮；調整線光源左右功率平衡、光源/相機平行度、"
                 "擴散板位置或工件高度，目標是把 min/max 均勻性拉高到 warning 門檻以上。",
+                labels=("均勻性",),
             )
         )
 
@@ -110,6 +152,7 @@ class RecommendationBuilder:
                     "整體 SNR 偏低",
                     "先提高有效信號，例如增加光源亮度或曝光；若背景 std 同時偏高，"
                     "先降低 gain、檢查光源閃爍與環境遮光，再重新評估 SNR。",
+                    labels=("SNR",),
                 )
             )
 
@@ -119,6 +162,7 @@ class RecommendationBuilder:
                     "背景雜訊或紋理偏高",
                     "降低相機 gain、檢查光源電源穩定度與頻閃，並固定相機/治具/輸送震動；"
                     "若是反光材質，加入偏光片或調整打光角度。",
+                    labels=("背景 std",),
                 )
             )
 
@@ -131,6 +175,7 @@ class RecommendationBuilder:
                     "未找到自動候選缺陷",
                     "若此圖是 NG 樣本，改用人工 ROI 量測缺陷 CNR；"
                     "再調整光源角度、波長、偏光或曝光，讓缺陷與背景灰階差變大。",
+                    labels=("CNR",),
                 )
             )
             return
@@ -141,6 +186,7 @@ class RecommendationBuilder:
                     "缺陷 CNR 偏低",
                     "優先改變打光角度、光源波長或偏光方向，讓缺陷 contrast 增加；"
                     "同時降低背景雜訊，目標是把候選 CNR 拉高到 warning 門檻以上。",
+                    labels=("CNR",),
                 )
             )
 
@@ -155,5 +201,6 @@ class RecommendationBuilder:
                 "清晰度偏低",
                 "重新對焦並鎖緊鏡頭，檢查工作距離與景深；若線上影像仍模糊，"
                 "縮短曝光時間、提高光源亮度補償，並降低輸送或治具震動。",
+                labels=("清晰度",),
             )
         )

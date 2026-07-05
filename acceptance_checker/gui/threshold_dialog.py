@@ -39,6 +39,7 @@ FIELD_LABELS = {
     "sharpness_warn": "清晰度觀察（Laplacian Var）",
     "hist_spread_fail": "灰階展開高風險（P99-P01）",
     "hist_spread_warn": "灰階展開觀察（P99-P01）",
+    "critical_score": "極高風險分數門檻（< 此分數則風險再升級）",
 }
 
 

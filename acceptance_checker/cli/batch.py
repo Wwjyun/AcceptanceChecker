@@ -5,6 +5,8 @@
     python -m acceptance_checker.cli image1.bmp image2.tif
     python -m acceptance_checker.cli --csv out.csv *.bmp
     python -m acceptance_checker.cli --jobs 4 --quiet *.bmp
+    python -m acceptance_checker.cli --history-log history.csv --note "已知風險，暫時放行" *.bmp
+    python -m acceptance_checker.cli --no-gate --csv out.csv *.bmp
 """
 
 from __future__ import annotations
@@ -19,7 +21,7 @@ from ..core.config import Thresholds
 from ..core.io_utils import validate_save_path
 from ..core.metrics import Metrics
 from ..core.pipeline import AcceptancePipeline
-from ..reporting import CsvExporter, DriftReporter, ReportBuilder
+from ..reporting import CsvExporter, DriftReporter, HistoryLogger, ReportBuilder
 
 logger = logging.getLogger("acceptance_checker.cli")
 
@@ -73,6 +75,20 @@ def main(argv: Optional[List[str]] = None) -> int:
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
         help="診斷訊息（錯誤/警告）的記錄等級；預設 WARNING",
     )
+    parser.add_argument(
+        "--note", dest="note",
+        help="放行備註/理由（選填），會寫入本次所有結果的 review_note 欄位，供事後追溯",
+    )
+    parser.add_argument(
+        "--history-log", dest="history_log_path",
+        help="跨批次/跨時間的分數歷史紀錄 CSV 路徑；指定後會附加寫入而非覆蓋，"
+        "用於事後比對分數是否持續下滑",
+    )
+    parser.add_argument(
+        "--no-gate", action="store_true",
+        help="exit code 一律回傳 0（除讀取失敗外），僅供人工瀏覽報告時參考，"
+        "不把 FAIL 的 exit code 當作自動化流程的擋線依據",
+    )
     args = parser.parse_args(argv)
 
     logging.basicConfig(
@@ -88,11 +104,16 @@ def main(argv: Optional[List[str]] = None) -> int:
             logger.error("無法讀取門檻設定檔：%s", e)
             return 2
 
-    # 先驗證 CSV 輸出路徑，避免分析完才發現無法寫出
+    # 先驗證 CSV / 歷史紀錄輸出路徑，避免分析完才發現無法寫出
     if args.csv_path:
         err = validate_save_path(args.csv_path)
         if err:
             logger.error("無法寫出 CSV：%s", err)
+            return 2
+    if args.history_log_path:
+        err = validate_save_path(args.history_log_path)
+        if err:
+            logger.error("無法寫出歷史紀錄：%s", err)
             return 2
 
     items = _analyze_all(args.images, args.jobs, args.max_pixels, thresholds, args.normalize)
@@ -127,16 +148,20 @@ def _report_and_export(
             exit_code = 2
             continue
 
+        if args.note:
+            m.review_note = args.note
+
         results.append(m)
         if args.quiet:
             print(f"{m.risk_level or m.overall_status}\t{m.quality_score:.1f}\t{m.file_name}")
         else:
             print(report_builder.build(m, thresholds))
             print("-" * 60)
-        if m.overall_status == "FAIL" and exit_code == 0:
+        if m.overall_status == "FAIL" and exit_code == 0 and not args.no_gate:
             exit_code = 1
 
     _write_csv(CsvExporter(), results, args.csv_path)
+    _write_history_log(results, args.history_log_path)
     _print_summary(results, failed_files)
     if len(results) >= 2:
         print("-" * 60)
@@ -152,6 +177,16 @@ def _write_csv(exporter: CsvExporter, results: List[Metrics], csv_path: Optional
         return
     exporter.export_many(results, csv_path)
     print(f"已寫入 CSV：{csv_path}（{len(results)} 筆）")
+
+
+def _write_history_log(results: List[Metrics], history_log_path: Optional[str]) -> None:
+    if not history_log_path:
+        return
+    if not results:
+        logger.warning("沒有任何影像分析成功，未寫入歷史紀錄。")
+        return
+    HistoryLogger().append_many(results, history_log_path)
+    print(f"已附加寫入歷史紀錄：{history_log_path}（{len(results)} 筆）")
 
 
 def _print_summary(results: List[Metrics], failed_files: List[str]) -> None:

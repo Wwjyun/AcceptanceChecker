@@ -54,6 +54,10 @@ class Metrics:
     fail_reasons: str = ""
     warn_reasons: str = ""
 
+    # 放行簽核 / 覆蓋理由：分數不擋線時，人工填寫的放行備註，會一併寫入 CSV 與歷史紀錄，
+    # 作為「為何在低分情況下仍放行」的留痕依據。
+    review_note: str = ""
+
     def as_dict(self) -> dict:
         """轉為 dict，供 CSV 匯出使用。"""
         return asdict(self)

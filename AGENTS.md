@@ -7,7 +7,7 @@ Guidance for AI agents working on this repository.
 AcceptanceChecker is a Python 3.9+ AOI raw-image acceptance checker. It includes:
 
 - `acceptance_checker/core`: image loading, normalization, metrics, defect detection, threshold config, judging, and pipeline orchestration.
-- `acceptance_checker/reporting`: text, CSV, and drift reporting.
+- `acceptance_checker/reporting`: text, CSV, drift, ranked recommendations, and cross-batch history-log reporting.
 - `acceptance_checker/gui`: PySide6 GUI, preview widgets, workers, ROI selection, and threshold dialogs.
 - `acceptance_checker/cli`: batch CLI entry points.
 - `tests`: pytest coverage.

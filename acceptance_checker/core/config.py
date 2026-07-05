@@ -52,6 +52,11 @@ class Thresholds:
     hist_spread_fail: float = 15.0
     hist_spread_warn: float = 30.0
 
+    # 加權總分再分級：低於此分數時，風險等級由「量產導入風險高」升為「量產導入風險極高」。
+    # 分數本身不會擋線（實務上仍會放行），這只影響人看的風險等級文字與 GUI 顏色，
+    # 讓同樣落在 FAIL 分數帶的批次也能分出「差一點」與「差很多」。
+    critical_score: float = 30.0
+
     # ---------- JSON 設定檔 ----------
 
     def to_dict(self) -> Dict[str, float]:

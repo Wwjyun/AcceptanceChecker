@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QMainWindow,
     QMessageBox,
     QPushButton,
@@ -85,6 +86,13 @@ class AcceptanceCheckerWindow(QMainWindow):
         top.addWidget(self.status_label)
         top.addStretch(1)
         root.addLayout(top)
+
+        note_row = QHBoxLayout()
+        note_row.addWidget(QLabel("放行備註/理由（選填，會寫入 CSV）："))
+        self.note_edit = QLineEdit()
+        self.note_edit.setPlaceholderText("例如：線壓不足暫時放行，已知風險為背景雜訊偏高")
+        note_row.addWidget(self.note_edit, 1)
+        root.addLayout(note_row)
 
         # 左右分割
         splitter = QSplitter(Qt.Orientation.Horizontal)
@@ -181,6 +189,9 @@ class AcceptanceCheckerWindow(QMainWindow):
         if err:
             QMessageBox.critical(self, "無法匯出", err)
             return
+        note = self.note_edit.text().strip()
+        if note:
+            self.result.metrics.review_note = note
         try:
             self.csv_exporter.export(self.result.metrics, path)
             QMessageBox.information(self, "完成", f"已匯出：\n{path}")

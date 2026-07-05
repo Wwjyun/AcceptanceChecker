@@ -49,7 +49,7 @@ def check_imports() -> None:
     )
     from acceptance_checker.cli import main as cli_main  # noqa: F401
     from acceptance_checker.core import pipeline  # noqa: F401
-    from acceptance_checker.reporting import text_report  # noqa: F401
+    from acceptance_checker.reporting import HistoryLogger, text_report  # noqa: F401
 
 
 def check_pipeline() -> None:
@@ -337,6 +337,30 @@ def check_cli() -> None:
             lines = [ln for ln in f.read().splitlines() if ln]
         assert len(lines) == 4, f"header + 3 rows，實得 {len(lines)}"
 
+        # --note 寫入 review_note、--history-log 附加寫入歷史紀錄
+        out3 = os.path.join(d, "with_note.csv")
+        hist = os.path.join(d, "history.csv")
+        rc3 = main([
+            "--quiet", "--csv", out3, "--history-log", hist,
+            "--note", "已知風險，暫時放行", *paths,
+        ])
+        assert rc3 in (0, 1), rc3
+        with open(out3, encoding="utf-8-sig") as f:
+            assert "已知風險，暫時放行" in f.read()
+        assert os.path.getsize(hist) > 0
+        # 再跑一次同一份歷史紀錄，應是附加而非覆蓋
+        rc4 = main(["--quiet", "--history-log", hist, paths[0]])
+        assert rc4 in (0, 1), rc4
+        with open(hist, encoding="utf-8-sig") as f:
+            hist_lines = [ln for ln in f.read().splitlines() if ln]
+        assert len(hist_lines) == 5, f"header + 3 + 1 rows，實得 {len(hist_lines)}"
+
+        # --no-gate：即使有 FAIL 結果，exit code 也應為 0
+        bad_path = os.path.join(d, "bad.png")
+        assert imwrite_unicode(bad_path, _synthetic_bad())
+        rc5 = main(["--quiet", "--no-gate", bad_path])
+        assert rc5 == 0, f"--no-gate 應強制 exit code 0，實得 {rc5}"
+
 
 def check_batch_window() -> None:
     """批次視窗：加入多張圖、跑完 BatchWorker、表格填值、可匯出 CSV。"""
@@ -369,12 +393,50 @@ def check_batch_window() -> None:
         assert win._thread is None, "批次分析逾時未結束"
         assert len(win._metrics) == 3, f"應有 3 筆結果，實得 {len(win._metrics)}"
 
+        rows = [win._metrics[r] for r in sorted(win._metrics)]
+
         out = os.path.join(d, "batch_out.csv")
-        win.csv_exporter.export_many([win._metrics[r] for r in sorted(win._metrics)], out)
+        win.csv_exporter.export_many(rows, out)
         with open(out, encoding="utf-8-sig") as f:
             lines = [ln for ln in f.read().splitlines() if ln]
         assert len(lines) == 4, f"header + 3 rows，實得 {len(lines)}"
+
+        # 備註欄位：套用後應寫入每一筆 Metrics，並隨 CSV / 歷史紀錄一併輸出
+        win.note_edit.setText("已知風險，暫時放行")
+        win._apply_note(rows)
+        assert all(m.review_note == "已知風險，暫時放行" for m in rows)
+
+        hist = os.path.join(d, "batch_history.csv")
+        win.history_logger.append_many(rows, hist)
+        with open(hist, encoding="utf-8-sig") as f:
+            hist_content = f.read()
+        assert "已知風險，暫時放行" in hist_content
     win.close()
+
+
+def check_history_log() -> None:
+    """歷史紀錄：多次附加寫入應累積列數、保留 review_note，且只有一份表頭。"""
+    from acceptance_checker import AcceptanceJudge, ImageAnalyzer, RawImage
+    from acceptance_checker.reporting import HistoryLogger
+
+    analyzer = ImageAnalyzer()
+    judge = AcceptanceJudge()
+    m, _, _ = analyzer.analyze(RawImage(_synthetic_good(), "uint8"), "good.png")
+    judge.judge(m)
+    m.review_note = "已知風險，暫時放行"
+
+    logger_ = HistoryLogger()
+    with tempfile.TemporaryDirectory() as d:
+        path = os.path.join(d, "歷史_紀錄.csv")  # 含中文路徑也要能附加寫入
+        logger_.append(m, path)
+        logger_.append_many([m, m], path)
+
+        with open(path, encoding="utf-8-sig") as f:
+            content = f.read()
+        lines = [ln for ln in content.splitlines() if ln]
+        assert len(lines) == 4, f"header + 3 rows，實得 {len(lines)}"
+        assert content.count("timestamp") == 1, "附加寫入不應重複表頭"
+        assert "已知風險，暫時放行" in content
 
 
 def check_threshold_rejudge() -> None:
@@ -424,6 +486,7 @@ def main() -> int:
         ("drift", check_drift),
         ("thresholds_json", check_thresholds_json),
         ("normalization", check_normalization),
+        ("history_log", check_history_log),
         ("threshold_rejudge", check_threshold_rejudge),
         ("gui", check_gui),
         ("gui_worker", check_gui_worker),

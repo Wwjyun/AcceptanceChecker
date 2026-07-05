@@ -188,7 +188,7 @@ class AcceptanceJudge:
             m.overall_status = "WARNING"
         else:
             m.overall_status = "FAIL"
-        m.risk_level = self._risk_level(m.overall_status)
+        m.risk_level = self._risk_level(m.overall_status, m.quality_score)
 
         m.fail_reasons = "；".join(fail)
         m.warn_reasons = "；".join(warn)
@@ -206,10 +206,18 @@ class AcceptanceJudge:
             points = 0.0
         score_items.append((label, points, weight))
 
-    def _risk_level(self, status: str) -> str:
+    def _risk_level(self, status: str, score: float) -> str:
+        """FAIL 再依 critical_score 細分「風險高」與「風險極高」。
+
+        分數不影響是否放行（實務上還是會放行），只影響這個給人看的等級字串，
+        讓同樣落在 FAIL 分數帶的批次也能區分優先處理順序。
+        """
+        if status == "FAIL":
+            if score < self.thresholds.critical_score:
+                return "量產導入風險極高"
+            return "量產導入風險高"
         labels = {
             "PASS": "量產風險低",
             "WARNING": "量產觀察項",
-            "FAIL": "量產導入風險高",
         }
         return labels.get(status, status)

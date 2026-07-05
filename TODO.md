@@ -61,3 +61,44 @@
 - [x] **16-bit 正規化策略**：`RawImage.load` / `_normalize_to_8bit` 加 `normalization`
       （linear ÷257 或 percentile 百分位拉伸）與 `percentiles`；`Metrics.norm_method` 記錄方式並印於報告；
       pipeline/CLI（`--normalize`）貫穿。smoketest 加 `normalization`、`tests/test_image.py`。
+
+## P5 — 風險溝通強化（分數用於留痕與提示，而非攔阻）
+
+背景：實務上影像/批次幾乎一定要放行，`quality_score` / `risk_level` 無法真的擋線，
+功能上應該優先服務「留痕、排優先序、看趨勢」這幾件事，而不是假裝自己是一道關卡。
+
+- [x] **建議事項依扣分排序**：`recommendations.py` 新增 `_parse_score_deficits()`，解析
+      `Metrics.score_breakdown`（`AcceptanceJudge.judge()` 已產生的 `"label points/weight；..."`
+      字串）算出每個標籤的 `weight - points` 扣分；`Recommendation` 新增 `labels` 欄位對應
+      `AcceptanceJudge.SCORE_WEIGHTS` 的標籤，`RecommendationBuilder.build()` 內的 `_rank()`
+      依扣分由大到小穩定排序（未先呼叫 `judge()`／無 `score_breakdown` 時，安全退回原始呼叫順序）。
+      不需改 `judge.py` 的簽章，改用解析既有字串而非新增結構化傳遞。
+      測試：`tests/test_recommendations.py`（排序、無 breakdown 時的退回行為）。
+
+- [x] **高風險區再分級**：`core/config.Thresholds` 新增 `critical_score`（預設 `30.0`）；
+      `AcceptanceJudge._risk_level()` 在 `overall_status == "FAIL"` 時，依分數是否低於
+      `critical_score` 再分出「量產導入風險極高」（更嚴重）與「量產導入風險高」（原本用字）；
+      `overall_status` 本身（PASS/WARNING/FAIL）不受影響，CLI exit code 與既有測試斷言維持不變。
+      `text_report.py` 的判讀說明依此分兩段文字；`gui/batch_window.py` 新增 `_CRITICAL_COLOR`
+      （深紅）區分表格列顏色；`gui/threshold_dialog.py` 的 `FIELD_LABELS` 加上中文標籤；
+      `thresholds.default.json` 補上欄位。測試：`tests/test_judge.py` 三項新增案例。
+
+- [x] **跨批次/跨時間的分數歷史紀錄**：新增 `reporting/history_log.py` 的 `HistoryLogger`
+      （`append` / `append_many`），每次呼叫皆以附加模式（`"a"` + `utf-8-sig`）寫入使用者指定的
+      CSV，檔案不存在或為空才寫表頭，欄位含時間戳、檔名、`risk_level`、`quality_score`、
+      各關鍵指標、`score_breakdown`、`review_note`。已驗證重複附加不會重複寫入 BOM。
+      CLI 新增 `--history-log PATH`；GUI 批次視窗新增「附加寫入歷史紀錄…」按鈕。
+      影響檔案：`reporting/history_log.py`（新）、`reporting/__init__.py`、`cli/batch.py`、
+      `gui/batch_window.py`。測試：`tests/test_history_log.py`、smoketest `history_log`/`cli`。
+
+- [x] **放行簽核 / 覆蓋理由欄位**：`core/metrics.Metrics` 新增 `review_note: str = ""`
+      （隨 `as_dict()` / `asdict()` 自動流入 CSV 與歷史紀錄，無需額外程式碼）。
+      CLI 新增 `--note "文字"`，套用到該次執行所有成功結果；GUI 主視窗與批次視窗都新增一列
+      文字輸入框，匯出 CSV／附加寫入歷史紀錄前套用到當時的結果上（非必填）。
+      影響檔案：`core/metrics.py`、`cli/batch.py`、`gui/app.py`、`gui/batch_window.py`。
+
+- [x] **確認 CLI exit code 的實際用途**：結論是把它明確定位成「預設供人工/半自動流程參考，
+      但呼叫端可自行選擇不當真」：新增 `--no-gate` 旗標，指定後 FAIL 判定不再把 exit code
+      推到 `1`（讀取失敗仍回傳 `2`，因為那是真的錯誤而非品質判定）；未加旗標時行為與先前
+      完全一致。README 的「CLI exit codes」章節已補充旗標說明與使用時機建議。
+      影響檔案：`cli/batch.py`、`README.md`。

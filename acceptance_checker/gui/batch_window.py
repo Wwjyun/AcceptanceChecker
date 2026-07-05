@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QHeaderView,
     QLabel,
+    QLineEdit,
     QMainWindow,
     QMessageBox,
     QProgressBar,
@@ -27,7 +28,7 @@ from ..core.config import Thresholds
 from ..core.io_utils import validate_save_path
 from ..core.metrics import Metrics
 from ..core.pipeline import AcceptancePipeline
-from ..reporting import CsvExporter, DriftReporter, ReportBuilder
+from ..reporting import CsvExporter, DriftReporter, HistoryLogger, ReportBuilder
 from .worker import BatchWorker
 
 _IMAGE_EXTS = (".bmp", ".png", ".jpg", ".jpeg", ".tif", ".tiff")
@@ -37,6 +38,9 @@ _STATUS_COLORS = {
     "WARNING": Qt.GlobalColor.darkYellow,
     "FAIL": Qt.GlobalColor.red,
 }
+# 分數低於 critical_score 時，即使 overall_status 仍是 FAIL，顏色也加深以區分優先序。
+_CRITICAL_COLOR = Qt.GlobalColor.darkRed
+_CRITICAL_LABEL = "量產導入風險極高"
 
 
 class BatchWindow(QMainWindow):
@@ -65,6 +69,7 @@ class BatchWindow(QMainWindow):
         self.report_builder = ReportBuilder()
         self.csv_exporter = CsvExporter()
         self.drift_reporter = DriftReporter(self._thresholds)
+        self.history_logger = HistoryLogger()
 
         self._queued: List[str] = []          # 待分析路徑
         self._metrics: Dict[int, Metrics] = {}  # row -> Metrics
@@ -89,14 +94,26 @@ class BatchWindow(QMainWindow):
         self.btn_csv.clicked.connect(self.on_export_csv)
         self.btn_drift = QPushButton("跨圖漂移報告")
         self.btn_drift.clicked.connect(self.on_show_drift)
+        self.btn_history = QPushButton("附加寫入歷史紀錄…")
+        self.btn_history.clicked.connect(self.on_append_history)
         self.btn_clear = QPushButton("清空")
         self.btn_clear.clicked.connect(self.on_clear)
-        for b in (self.btn_add, self.btn_run, self.btn_csv, self.btn_drift, self.btn_clear):
+        for b in (
+            self.btn_add, self.btn_run, self.btn_csv, self.btn_drift,
+            self.btn_history, self.btn_clear,
+        ):
             top.addWidget(b)
         top.addStretch(1)
         root.addLayout(top)
 
         root.addWidget(QLabel("可將影像檔直接拖放到下方表格；雙擊列可看完整報告。"))
+
+        note_row = QHBoxLayout()
+        note_row.addWidget(QLabel("放行備註/理由（選填，會寫入 CSV 與歷史紀錄）："))
+        self.note_edit = QLineEdit()
+        self.note_edit.setPlaceholderText("例如：線壓不足暫時放行，已知風險為背景雜訊偏高")
+        note_row.addWidget(self.note_edit, 1)
+        root.addLayout(note_row)
 
         self.table = QTableWidget(0, len(self.COLUMNS))
         self.table.setHorizontalHeaderLabels(self.COLUMNS)
@@ -201,7 +218,9 @@ class BatchWindow(QMainWindow):
 
     def _fill_row(self, row: int, m: Metrics) -> None:
         status_item = QTableWidgetItem(m.risk_level or m.overall_status)
-        color = _STATUS_COLORS.get(m.overall_status)
+        color = _CRITICAL_COLOR if m.risk_level == _CRITICAL_LABEL else _STATUS_COLORS.get(
+            m.overall_status
+        )
         if color is not None:
             status_item.setForeground(color)
         self.table.setItem(row, 1, status_item)
@@ -244,11 +263,18 @@ class BatchWindow(QMainWindow):
             return
         QMessageBox.information(self, "跨圖一致性 / 灰階漂移", self.drift_reporter.build(rows))
 
+    def _apply_note(self, rows: List[Metrics]) -> None:
+        note = self.note_edit.text().strip()
+        if note:
+            for m in rows:
+                m.review_note = note
+
     def on_export_csv(self) -> None:
         rows = [self._metrics[r] for r in sorted(self._metrics)]
         if not rows:
             QMessageBox.information(self, "沒有結果", "尚無成功分析的結果可匯出。")
             return
+        self._apply_note(rows)
         default_name = f"aoi_batch_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
         path, _ = QFileDialog.getSaveFileName(self, "匯出彙整 CSV", default_name, "CSV (*.csv)")
         if not path:
@@ -262,3 +288,33 @@ class BatchWindow(QMainWindow):
             QMessageBox.information(self, "完成", f"已匯出 {len(rows)} 筆：\n{path}")
         except Exception as e:  # noqa: BLE001
             QMessageBox.critical(self, "錯誤", f"匯出失敗：\n{e}")
+
+    def on_append_history(self) -> None:
+        """把目前批次結果附加寫入一份跨時間的歷史紀錄 CSV（不覆蓋既有內容）。
+
+        用途：單次分數不會擋線，但同一產線的分數若持續下滑，就是能拿去反映的證據；
+        這裡選的檔案若已存在則附加、不存在則建立並寫表頭。
+        """
+        rows = [self._metrics[r] for r in sorted(self._metrics)]
+        if not rows:
+            QMessageBox.information(self, "沒有結果", "尚無成功分析的結果可寫入歷史紀錄。")
+            return
+        self._apply_note(rows)
+        path, _ = QFileDialog.getSaveFileName(
+            self,
+            "選擇歷史紀錄 CSV（可選擇既有檔案以附加寫入）",
+            "history.csv",
+            "CSV (*.csv)",
+            options=QFileDialog.Option.DontConfirmOverwrite,
+        )
+        if not path:
+            return
+        err = validate_save_path(path)
+        if err:
+            QMessageBox.critical(self, "無法寫入", err)
+            return
+        try:
+            self.history_logger.append_many(rows, path)
+            QMessageBox.information(self, "完成", f"已附加寫入 {len(rows)} 筆：\n{path}")
+        except Exception as e:  # noqa: BLE001
+            QMessageBox.critical(self, "錯誤", f"寫入失敗：\n{e}")

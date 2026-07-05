@@ -3,6 +3,7 @@
   "bg_std_warn": 6.0,
   "clipping_fail_pct": 1.0,
   "clipping_warn_pct": 0.1,
+  "critical_score": 30.0,
   "cnr_fail": 3.0,
   "cnr_warn": 5.0,
   "hist_spread_fail": 15.0,

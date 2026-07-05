@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from acceptance_checker import Metrics, ReportBuilder, Thresholds
+from acceptance_checker import AcceptanceJudge, Metrics, ReportBuilder, Thresholds
 from acceptance_checker.reporting import RecommendationBuilder
 
 
@@ -88,3 +88,25 @@ def test_low_sharpness_recommends_focus_and_vibration_actions():
     assert "清晰度偏低" in text
     assert "重新對焦" in text
     assert "降低輸送或治具震動" in text
+
+
+def test_recommendations_ranked_by_deficit_descending():
+    """CNR 權重最大（20）；同時觸發清晰度（權重 5）時，CNR 建議應排在清晰度之前。"""
+    m = _healthy_metrics()
+    m.auto_defect_cnr_est = 1.0  # CNR fail：扣 20 分
+    m.sharpness_laplacian_var = 40.0  # 清晰度 warn：扣 2.5 分
+    AcceptanceJudge().judge(m)  # 產生 score_breakdown
+    text = RecommendationBuilder().build(m, Thresholds())
+    cnr_idx = text.index("缺陷 CNR 偏低")
+    sharpness_idx = text.index("清晰度偏低")
+    assert cnr_idx < sharpness_idx, "扣分較高的 CNR 建議應排在清晰度之前"
+
+
+def test_recommendations_rank_falls_back_to_original_order_without_breakdown():
+    """未先呼叫 judge()（score_breakdown 為空）時，仍應照原本呼叫順序輸出，不應出錯。"""
+    m = _healthy_metrics()
+    m.mean_gray = 40.0
+    m.sharpness_laplacian_var = 40.0
+    text = RecommendationBuilder().build(m, Thresholds())
+    assert "整體亮度不足" in text
+    assert "清晰度偏低" in text

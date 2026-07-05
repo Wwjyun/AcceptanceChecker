@@ -125,7 +125,13 @@ Laplacian variance：{m.sharpness_laplacian_var:.3f}
         lines.append(f"加權總分：{m.quality_score:.1f} / 100")
         lines.append(f"加權明細：{m.score_breakdown if m.score_breakdown else '無'}")
 
-        if m.overall_status == "FAIL":
+        if m.overall_status == "FAIL" and m.risk_level == "量產導入風險極高":
+            lines.append(
+                "本次結果屬量產導入風險「極高」，加權總分遠低於建議區間，代表多項關鍵指標"
+                "同時未達標，安全裕度非常薄。若仍需放行，建議優先處理【建議處置】中扣分最多的"
+                "項目，並在放行紀錄中註明已知風險與原因。"
+            )
+        elif m.overall_status == "FAIL":
             lines.append(
                 "本次結果屬量產導入風險高，代表目前成像條件對 recipe 視窗的安全裕度不足，"
                 "建議先收斂光源、曝光、治具與對焦條件，再進一步調整 AOI recipe。"
