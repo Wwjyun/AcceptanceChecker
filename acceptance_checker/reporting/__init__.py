@@ -3,6 +3,15 @@
 
 from .csv_export import CsvExporter
 from .drift_report import DriftReport, DriftReporter, DriftStats
+from .recommendations import Recommendation, RecommendationBuilder
 from .text_report import ReportBuilder
 
-__all__ = ["CsvExporter", "ReportBuilder", "DriftReporter", "DriftReport", "DriftStats"]
+__all__ = [
+    "CsvExporter",
+    "Recommendation",
+    "RecommendationBuilder",
+    "ReportBuilder",
+    "DriftReporter",
+    "DriftReport",
+    "DriftStats",
+]

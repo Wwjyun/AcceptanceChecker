@@ -7,6 +7,7 @@ from typing import List, Optional
 
 from ..core.config import Thresholds
 from ..core.metrics import Metrics
+from .recommendations import RecommendationBuilder
 
 
 class ReportBuilder:
@@ -18,11 +19,15 @@ class ReportBuilder:
         "FAIL": "不合格：至少一項關鍵指標越過 FAIL 門檻，建議先修正成像條件再調整軟體。",
     }
 
+    def __init__(self, recommendation_builder: RecommendationBuilder | None = None):
+        self.recommendation_builder = recommendation_builder or RecommendationBuilder()
+
     def build(self, m: Metrics, thresholds: Optional[Thresholds] = None) -> str:
         t = thresholds or Thresholds()
         note = self.STATUS_NOTE.get(m.overall_status, "")
         judgement = self._judgement_explanation(m, t)
         metric_notes = self._metric_notes(m, t)
+        recommendations = self.recommendation_builder.build(m, t)
         report = f"""
 【總判定】
 狀態：{m.overall_status}
@@ -81,14 +86,8 @@ Laplacian variance：{m.sharpness_laplacian_var:.3f}
 【逐項指標解讀】
 {metric_notes}
 
-【工程解讀】
-1. 平均灰階太低，代表進光量或相機感度不足，軟體只能硬拉。
-2. 均勻性太差，代表 700 mm 寬度下左中右亮度不一致，後續 threshold / recipe 會不穩。
-3. CNR 太低，代表缺陷和背景不可分，這比單純 SNR 更接近 AOI 可檢性。
-4. SNR 太低，代表整體信號相對背景雜訊不足，後續拉亮會同步放大雜訊。
-5. 背景 std 太高，代表正常紋理或雜訊會增加誤判。
-6. clipping 太高代表資訊已經被壓死或過曝，後處理無法真正救回。
-7. 清晰度 proxy 太低時，200 µm 缺陷可能被對焦或運動模糊吃掉。
+【建議處置】
+{recommendations}
 """
         return report.strip()
 

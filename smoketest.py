@@ -76,6 +76,7 @@ def check_pipeline() -> None:
     assert "總判定" in report_text
     assert "判讀說明" in report_text
     assert "逐項指標解讀" in report_text
+    assert "建議處置" in report_text
 
     # 壞圖（全黑）必為 FAIL
     raw_bad = RawImage(_synthetic_bad(), "uint8")
