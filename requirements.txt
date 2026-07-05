@@ -1,0 +1,4 @@
+# AOI Raw Image 光學驗收檢查工具 相依套件
+opencv-python>=4.5
+numpy>=1.21
+PySide6>=6.5
