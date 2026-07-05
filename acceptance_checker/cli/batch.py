@@ -129,7 +129,7 @@ def _report_and_export(
 
         results.append(m)
         if args.quiet:
-            print(f"{m.overall_status}\t{m.quality_score:.1f}\t{m.file_name}")
+            print(f"{m.risk_level or m.overall_status}\t{m.quality_score:.1f}\t{m.file_name}")
         else:
             print(report_builder.build(m, thresholds))
             print("-" * 60)
@@ -160,8 +160,8 @@ def _print_summary(results: List[Metrics], failed_files: List[str]) -> None:
         counts[m.overall_status] = counts.get(m.overall_status, 0) + 1
     print(
         "彙整："
-        f"成功 {len(results)}（PASS {counts['PASS']} / "
-        f"WARNING {counts['WARNING']} / FAIL {counts['FAIL']}）、"
+        f"成功 {len(results)}（量產風險低 {counts['PASS']} / "
+        f"量產觀察項 {counts['WARNING']} / 量產導入風險高 {counts['FAIL']}）、"
         f"讀取失敗 {len(failed_files)}"
     )
 

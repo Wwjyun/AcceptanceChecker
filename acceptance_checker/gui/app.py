@@ -149,7 +149,9 @@ class AcceptanceCheckerWindow(QMainWindow):
         self._update_report()
         self._update_preview()
         m = result.metrics
-        self.status_label.setText(f"{m.overall_status} {m.quality_score:.1f}分：{m.file_name}")
+        self.status_label.setText(
+            f"{m.risk_level or m.overall_status} {m.quality_score:.1f}分：{m.file_name}"
+        )
         self._teardown_thread()
 
     def _on_analysis_failed(self, message: str) -> None:
@@ -206,7 +208,8 @@ class AcceptanceCheckerWindow(QMainWindow):
             self._update_report()
             m = self.result.metrics
             self.status_label.setText(
-                f"{m.overall_status} {m.quality_score:.1f}分：{m.file_name}（已依新門檻重判）"
+                f"{m.risk_level or m.overall_status} {m.quality_score:.1f}分："
+                f"{m.file_name}（已依新門檻重判）"
             )
         else:
             self.report.setPlainText(self.report_builder.thresholds_hint(self.thresholds))

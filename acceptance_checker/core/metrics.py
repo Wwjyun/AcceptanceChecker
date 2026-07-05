@@ -49,6 +49,7 @@ class Metrics:
 
     quality_score: float = 0.0
     score_breakdown: str = ""
+    risk_level: str = ""
     overall_status: str = "UNKNOWN"
     fail_reasons: str = ""
     warn_reasons: str = ""

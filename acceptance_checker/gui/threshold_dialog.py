@@ -22,23 +22,23 @@ from ..core.io_utils import validate_save_path
 
 # 欄位的中文標籤（找不到時退回英文欄位名）
 FIELD_LABELS = {
-    "mean_gray_fail": "平均灰階 FAIL 門檻",
-    "mean_gray_warn": "平均灰階 WARNING 門檻",
-    "uniformity_fail": "均勻性 FAIL（min/max）",
-    "uniformity_warn": "均勻性 WARNING（min/max）",
+    "mean_gray_fail": "平均灰階高風險門檻",
+    "mean_gray_warn": "平均灰階觀察門檻",
+    "uniformity_fail": "均勻性高風險（min/max）",
+    "uniformity_warn": "均勻性觀察（min/max）",
     "uniformity_good": "均勻性 良好參考值",
-    "clipping_fail_pct": "clipping FAIL（%）",
-    "clipping_warn_pct": "clipping WARNING（%）",
-    "cnr_fail": "缺陷 CNR FAIL",
-    "cnr_warn": "缺陷 CNR WARNING",
-    "snr_fail": "整體 SNR FAIL",
-    "snr_warn": "整體 SNR WARNING",
-    "bg_std_warn": "背景 std WARNING",
-    "bg_std_fail": "背景 std FAIL",
-    "sharpness_fail": "清晰度 FAIL（Laplacian Var）",
-    "sharpness_warn": "清晰度 WARNING（Laplacian Var）",
-    "hist_spread_fail": "灰階展開 FAIL（P99-P01）",
-    "hist_spread_warn": "灰階展開 WARNING（P99-P01）",
+    "clipping_fail_pct": "clipping 高風險（%）",
+    "clipping_warn_pct": "clipping 觀察（%）",
+    "cnr_fail": "缺陷 CNR 高風險",
+    "cnr_warn": "缺陷 CNR 觀察",
+    "snr_fail": "整體 SNR 高風險",
+    "snr_warn": "整體 SNR 觀察",
+    "bg_std_warn": "背景 std 觀察",
+    "bg_std_fail": "背景 std 高風險",
+    "sharpness_fail": "清晰度高風險（Laplacian Var）",
+    "sharpness_warn": "清晰度觀察（Laplacian Var）",
+    "hist_spread_fail": "灰階展開高風險（P99-P01）",
+    "hist_spread_warn": "灰階展開觀察（P99-P01）",
 }
 
 
@@ -47,7 +47,7 @@ class ThresholdDialog(QDialog):
 
     def __init__(self, thresholds: Thresholds, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("判斷門檻設定")
+        self.setWindowTitle("風險門檻設定")
         self._spins: dict[str, QDoubleSpinBox] = {}
 
         layout = QVBoxLayout(self)

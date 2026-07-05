@@ -73,7 +73,7 @@ def check_pipeline() -> None:
     assert defect.overlay is not None and defect.overlay.ndim == 3
     assert m.auto_defect_count >= 1, "應偵測到至少一個缺陷候選"
     report_text = builder.build(m)
-    assert "總判定" in report_text
+    assert "量產風險總覽" in report_text
     assert "判讀說明" in report_text
     assert "逐項指標解讀" in report_text
     assert "建議處置" in report_text

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """多影像灰階漂移 / 跨圖一致性報告。
 
-批次分析多張同類影像時，除了各自的 PASS/WARNING/FAIL，還關心「整批之間」
+批次分析多張同類影像時，除了各自的量產風險等級，還關心「整批之間」
 的一致性：平均灰階是否漂移、各區均勻性是否穩定、背景雜訊是否忽高忽低。
 漂移過大代表光源衰減、相機增益變動或治具擺放不一致，是量產穩定性的風險。
 """
@@ -53,7 +53,7 @@ class DriftReport:
 
     stats: List[DriftStats] = field(default_factory=list)
     mean_gray_spread: float = 0.0
-    drift_status: str = "PASS"  # PASS / WARNING / FAIL（依平均灰階漂移）
+    drift_status: str = "PASS"  # 內部狀態值，依平均灰階漂移計算
     warnings: List[str] = field(default_factory=list)
 
 
@@ -85,13 +85,15 @@ class DriftReporter:
             report.drift_status = "FAIL"
             report.warnings.append(
                 f"平均灰階跨圖漂移 {report.mean_gray_spread:.1f} "
-                f"≥ FAIL 門檻 {self.thresholds.hist_spread_fail:.1f}"
+                f"≥ 高風險門檻 {self.thresholds.hist_spread_fail:.1f}；"
+                "量產批間亮度窗口可能需要補償或重新收斂"
             )
         elif report.mean_gray_spread >= self.thresholds.hist_spread_warn:
             report.drift_status = "WARNING"
             report.warnings.append(
                 f"平均灰階跨圖漂移 {report.mean_gray_spread:.1f} "
-                f"≥ WARNING 門檻 {self.thresholds.hist_spread_warn:.1f}"
+                f"≥ 觀察門檻 {self.thresholds.hist_spread_warn:.1f}；"
+                "建議確認光源衰減、相機增益與治具重複定位"
             )
         return report
 
@@ -102,7 +104,7 @@ class DriftReporter:
         report = self.analyze(metrics_list)
         lines = [
             f"【跨圖一致性 / 灰階漂移】共 {len(metrics_list)} 張",
-            f"漂移判定：{report.drift_status}",
+            f"漂移風險：{self._risk_label(report.drift_status)}",
             "",
             f"{'指標':<14}{'平均':>10}{'標準差':>10}{'最小':>10}{'最大':>10}{'全距':>10}",
         ]
@@ -116,3 +118,11 @@ class DriftReporter:
             lines.append("提醒：")
             lines.extend(f"- {w}" for w in report.warnings)
         return "\n".join(lines)
+
+    def _risk_label(self, status: str) -> str:
+        labels = {
+            "PASS": "量產風險低",
+            "WARNING": "量產觀察項",
+            "FAIL": "量產導入風險高",
+        }
+        return labels.get(status, status)

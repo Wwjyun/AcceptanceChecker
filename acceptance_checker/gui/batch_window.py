@@ -42,7 +42,17 @@ _STATUS_COLORS = {
 class BatchWindow(QMainWindow):
     """接受拖放/選檔的批次驗收視窗。"""
 
-    COLUMNS = ["檔名", "狀態", "總分", "平均灰階", "均勻性", "SNR", "CNR", "背景std", "主要原因"]
+    COLUMNS = [
+        "檔名",
+        "風險等級",
+        "總分",
+        "平均灰階",
+        "均勻性",
+        "SNR",
+        "CNR",
+        "背景std",
+        "主要原因",
+    ]
 
     def __init__(self, thresholds: Optional[Thresholds] = None, parent=None):
         super().__init__(parent)
@@ -190,7 +200,7 @@ class BatchWindow(QMainWindow):
         self.progress.setValue(self._row_cursor)
 
     def _fill_row(self, row: int, m: Metrics) -> None:
-        status_item = QTableWidgetItem(m.overall_status)
+        status_item = QTableWidgetItem(m.risk_level or m.overall_status)
         color = _STATUS_COLORS.get(m.overall_status)
         if color is not None:
             status_item.setForeground(color)

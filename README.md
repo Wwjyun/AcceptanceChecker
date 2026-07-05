@@ -1,6 +1,6 @@
 # AcceptanceChecker
 
-AcceptanceChecker is a Python AOI raw-image acceptance tool. It analyzes inspection images, computes image-quality and defect metrics, scores each image on a weighted 100-point scale, and classifies the score as `PASS`, `WARNING`, or `FAIL`.
+AcceptanceChecker is a Python AOI raw-image acceptance tool. It analyzes inspection images, computes image-quality and defect metrics, scores each image on a weighted 100-point scale, and reports the production risk level for engineering review.
 
 The project provides:
 
@@ -67,8 +67,8 @@ python -m acceptance_checker.cli --normalize percentile image16.tif
 
 CLI exit codes:
 
-- `0`: analysis completed with no images scoring below the `FAIL` band.
-- `1`: at least one image scored in the `FAIL` band.
+- `0`: analysis completed with no images in the high-risk score band.
+- `1`: at least one image scored in the high-risk score band.
 - `2`: command usage, file IO, threshold loading, or analysis error.
 
 ## Python API
@@ -82,6 +82,7 @@ pipeline = AcceptancePipeline(thresholds)
 result = pipeline.run("sample.bmp")
 
 print(result.metrics.overall_status)
+print(result.metrics.risk_level)
 print(result.metrics.quality_score)
 print(result.metrics.score_breakdown)
 print(result.metrics.fail_reasons)
@@ -106,10 +107,10 @@ Default threshold fields are defined in `acceptance_checker/core/config.py` and 
 
 Each analyzed image receives a weighted score out of 100. Thresholds still define the per-metric bands, but they no longer act as a single-item veto:
 
-- A metric in the pass band receives its full weight.
-- A metric in the warning band receives half of its weight.
-- A metric in the fail band receives 0 for that metric.
-- If no automatic defect candidate is found, CNR is treated as a warning-band item because the image may be OK, but the tool cannot prove NG defect separation from automatic CNR alone.
+- A metric in the low-risk band receives its full weight.
+- A metric in the observation band receives half of its weight.
+- A metric in the high-risk band receives 0 for that metric.
+- If no automatic defect candidate is found, CNR is treated as an observation-band item because the image may be OK, but automatic CNR alone does not provide enough evidence for NG defect separation.
 
 Default weights:
 
@@ -125,13 +126,13 @@ Default weights:
 | Background std proxy | 5 |
 | Sharpness Laplacian variance | 5 |
 
-Score bands:
+Score bands and report language:
 
-- `PASS`: score >= 80
-- `WARNING`: 60 <= score < 80
-- `FAIL`: score < 60
+- `量產風險低`: score >= 80
+- `量產觀察項`: 60 <= score < 80
+- `量產導入風險高`: score < 60
 
-The text report, GUI status, batch table, quiet CLI output, and CSV export include both `quality_score` and `score_breakdown`.
+The text report, GUI status, batch table, quiet CLI output, and CSV export include `risk_level`, `quality_score`, and `score_breakdown`. High-risk and observation items are phrased as engineering production risks, such as exposure margin, field uniformity, clipping, defect separation, SNR, background noise, and focus stability.
 
 ## Validation
 
