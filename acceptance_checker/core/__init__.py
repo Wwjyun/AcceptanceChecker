@@ -138,6 +138,16 @@ from .v4_judge import (
     V4AcceptanceJudge,
     V4Decision,
 )
+from .waiver import (
+    ApprovalLevel,
+    WaivedMetric,
+    Waiver,
+    WaiverApproval,
+    WaiverError,
+    WaiverEvaluation,
+    WaiverStatus,
+    WaiverTrackingReport,
+)
 
 __all__ = [
     "ImageAnalyzer",
@@ -256,4 +266,12 @@ __all__ = [
     "S0PriorityEventType",
     "V4AcceptanceJudge",
     "V4Decision",
+    "ApprovalLevel",
+    "WaivedMetric",
+    "Waiver",
+    "WaiverApproval",
+    "WaiverError",
+    "WaiverEvaluation",
+    "WaiverStatus",
+    "WaiverTrackingReport",
 ]

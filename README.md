@@ -453,6 +453,22 @@ spatial-STD and 30 temporal-noise observations per point, keeps the two signals
 separate, fits `y = a × brightness^b`, reports `a`, exponent `b`, and R², and
 exports an auditable SVG regression graph.
 
+## v4 written waiver workflow
+
+`Waiver` preserves the original rejected/fatal result, failed metric snapshots,
+four required risk statements, responsible owner, hardware completion date,
+target terms, explicit software best-effort acknowledgement, and signed
+approval levels. A waiver lasts at most 90 days and is always displayed as
+active-but-not-accepted; expiry or invalidation restores the original result.
+
+G1–G4 S0 waivers require imaging-system and requirements managers jointly.
+G5/G6 S0 starts one level higher. Each of the two permitted extensions raises
+the approval level; the second extension (third submission) also requires an
+alternative architecture/equipment/scope plan. Any newly observed S0
+immediately invalidates the waiver. `WaiverTrackingReport` records 30-day
+hardware progress, remaining work, actual misses/false calls, current metrics,
+new S1/S0 items, and evidence; overdue tracking removes extension eligibility.
+
 ## Validation
 
 Run the core test suite:
