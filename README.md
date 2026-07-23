@@ -314,6 +314,20 @@ uses the locked 30%FS/8-connected/50px definition; dark-field edge clipping uses
 Golden defect's 5px ring and emits an S0 priority event for a continuous 3px break.
 Record-only values remain visible but do not incorrectly make a group incomplete.
 
+## v4 dataset manifest and precondition lock
+
+`PreconditionLock` validates the camera, optics, lighting, mechanics, environment,
+sample, computation, and data categories required by the v4 specification. Every
+recorded value participates in a canonical SHA-256 fingerprint; `partition_sessions()`
+starts a new session whenever any locked value changes. A warm-up shorter than
+30 minutes explicitly invalidates the dataset.
+
+`build_dataset_manifest()` imports only metadata supplied by an unambiguous JSON or CSV
+sidecar. It records each source-relative path, file SHA-256, byte size, nanosecond
+mtime, image level, L1 calibration version, and sidecar path. Image level and
+calibration identity are never inferred from pixel data or filenames. The saved
+manifest includes its own integrity hash and rejects modified content when reloaded.
+
 ## Validation
 
 Run the core test suite:

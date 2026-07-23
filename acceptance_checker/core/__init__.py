@@ -3,6 +3,20 @@
 
 from .analyzer import ImageAnalyzer
 from .config import Thresholds
+from .dataset_manifest import (
+    AcceptanceDatasetManifest,
+    ImageEvidence,
+    ManifestError,
+    PreconditionLock,
+    SessionInput,
+    SessionPartition,
+    build_dataset_manifest,
+    build_image_evidence,
+    load_image_sidecar,
+    partition_sessions,
+    sha256_file,
+    sidecar_candidates,
+)
 from .detector import DefectDetector, DefectResult, RoiCnrResult, roi_cnr
 from .g1_measurement import (
     DefectPolarity,
@@ -56,6 +70,18 @@ from .v4_judge import (
 __all__ = [
     "ImageAnalyzer",
     "Thresholds",
+    "AcceptanceDatasetManifest",
+    "ImageEvidence",
+    "ManifestError",
+    "PreconditionLock",
+    "SessionInput",
+    "SessionPartition",
+    "build_dataset_manifest",
+    "build_image_evidence",
+    "load_image_sidecar",
+    "partition_sessions",
+    "sha256_file",
+    "sidecar_candidates",
     "DefectDetector",
     "DefectResult",
     "RoiCnrResult",

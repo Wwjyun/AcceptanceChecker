@@ -80,7 +80,7 @@ class AcceptanceManifest:
     spec_version: str = "v4-draft"
     schema_version: str = "1.0"
     created_at: str = field(default_factory=_utc_now_iso)
-    precondition_lock: Dict[str, Any] = field(default_factory=dict)
+    precondition_lock: Any = field(default_factory=dict)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -99,12 +99,32 @@ class AcceptanceManifest:
             "spec_version": self.spec_version,
             "schema_version": self.schema_version,
             "created_at": self.created_at,
-            "precondition_lock": dict(self.precondition_lock),
+            "precondition_lock": (
+                self.precondition_lock.to_dict()
+                if hasattr(self.precondition_lock, "to_dict")
+                else dict(self.precondition_lock)
+            ),
             "metadata": dict(self.metadata),
         }
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "AcceptanceManifest":
+        lock_data = dict(data.get("precondition_lock", {}))
+        lock: Any = lock_data
+        formal_categories = {
+            "camera",
+            "optics",
+            "lighting",
+            "mechanics",
+            "environment",
+            "sample",
+            "computation",
+            "data",
+        }
+        if formal_categories <= set(lock_data):
+            from .dataset_manifest import PreconditionLock
+
+            lock = PreconditionLock.from_dict(lock_data)
         return cls(
             machine_id=str(data["machine_id"]),
             optical_mode=OpticalMode(data["optical_mode"]),
@@ -112,7 +132,7 @@ class AcceptanceManifest:
             spec_version=str(data["spec_version"]),
             schema_version=str(data.get("schema_version", "1.0")),
             created_at=str(data["created_at"]),
-            precondition_lock=dict(data.get("precondition_lock", {})),
+            precondition_lock=lock,
             metadata=dict(data.get("metadata", {})),
         )
 
