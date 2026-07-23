@@ -215,10 +215,10 @@
 
 ### P4.1 Golden 樣本與標註資料
 
-- [ ] 建立 Golden catalog：PASS/NG、缺陷型態、尺寸、方向、極性、位置、批次與核准版本。
-- [ ] 保存缺陷 ROI、局部背景 ring 與全寬區域標籤。
-- [ ] Golden 版本變更建立新基準，不覆蓋舊報告所引用的版本。
-- [ ] 支援實際 detector 分數/判定匯入，不把 AcceptanceChecker 的自動候選 proxy 當正式檢出器。
+- [x] 建立 Golden catalog：PASS/NG、缺陷型態、尺寸、方向、極性、位置、批次與核准版本。
+- [x] 保存缺陷 ROI、局部背景 ring 與全寬區域標籤。
+- [x] Golden 版本變更建立新基準，不覆蓋舊報告所引用的版本。
+- [x] 支援實際 detector 分數/判定匯入，不把 AcceptanceChecker 的自動候選 proxy 當正式檢出器。
 
 ### P4.2 G6 指標與統計
 

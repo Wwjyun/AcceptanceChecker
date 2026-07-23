@@ -51,6 +51,16 @@ from .g5_measurement import (
     InterCameraGrayEvidence,
     StitchEvidence,
 )
+from .golden_catalog import (
+    DetectorDecision,
+    DetectorResultSet,
+    FullWidthRegion,
+    GoldenCatalog,
+    GoldenCatalogError,
+    GoldenCatalogRepository,
+    GoldenDisposition,
+    GoldenSample,
+)
 from .image import MeasurementPlaneError, RawImage
 from .judge import AcceptanceJudge
 from .legacy_adapter import LegacyMetricsAdapter, legacy_metrics_to_measurements
@@ -147,6 +157,14 @@ __all__ = [
     "ImageObservation",
     "InterCameraGrayEvidence",
     "StitchEvidence",
+    "DetectorDecision",
+    "DetectorResultSet",
+    "FullWidthRegion",
+    "GoldenCatalog",
+    "GoldenCatalogError",
+    "GoldenCatalogRepository",
+    "GoldenDisposition",
+    "GoldenSample",
     "RawImage",
     "MeasurementPlaneError",
     "AcceptanceJudge",

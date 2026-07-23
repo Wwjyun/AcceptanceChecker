@@ -407,6 +407,21 @@ its numeric value. A versioned single-camera architecture declaration supplies
 an explicit not-applicable result instead of silently skipping stitch checks.
 The existing `TraceabilityValidator` supplies the eighth G5 result.
 
+## v4 approved Golden catalogs
+
+Formal G6 evidence uses `GoldenCatalog`, an approved, versioned catalog whose NG
+records include defect type, physical and pixel dimensions, effective width,
+direction, polarity, position, full-width region, defect ROI, local background
+ring, batch, orientation, image source, and SHA-256. PASS records cannot carry
+defect labels. The append-only `GoldenCatalogRepository` stores every version at
+`<catalog-id>/<version>.json` and refuses to overwrite a referenced baseline.
+
+Production detector decisions are imported separately through
+`DetectorResultSet`. Every row retains detector, detector version, decision-rule
+version, threshold, score, decision, capture-attempt count, and import source,
+and must exactly cover the catalog version's sample IDs. The legacy automatic
+candidate detector is therefore kept outside formal G6 evidence.
+
 ## Validation
 
 Run the core test suite:
