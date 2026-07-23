@@ -50,6 +50,15 @@ from .specification import (
     load_default_v4_spec,
     load_v4_spec,
 )
+from .temporal_analysis import (
+    RRObservation,
+    TemperatureRecord,
+    TemporalAcceptanceMeasurer,
+    TemporalAnalysisError,
+    TemporalMeasurementInputs,
+    TemporalMeasurementReport,
+    TemporalSeries,
+)
 from .v4_domain import (
     AcceptanceManifest,
     AcceptanceSession,
@@ -115,6 +124,13 @@ __all__ = [
     "V4Specification",
     "load_default_v4_spec",
     "load_v4_spec",
+    "RRObservation",
+    "TemperatureRecord",
+    "TemporalAcceptanceMeasurer",
+    "TemporalAnalysisError",
+    "TemporalMeasurementInputs",
+    "TemporalMeasurementReport",
+    "TemporalSeries",
     "AcceptanceManifest",
     "AcceptanceSession",
     "ImageLevel",

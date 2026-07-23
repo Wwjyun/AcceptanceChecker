@@ -135,13 +135,15 @@ class AcceptanceJudge:
 
         if m.signal_to_noise_ratio < t.snr_fail:
             fail.append(
-                f"訊雜比風險：整體 SNR {m.signal_to_noise_ratio:.2f} < {t.snr_fail}，"
+                f"單張空間雜訊風險：SNR proxy {m.signal_to_noise_ratio:.2f} "
+                f"< {t.snr_fail}，"
                 "量產時製程微小差異可能被雜訊淹沒"
             )
             self._add_score(score_items, "SNR", "fail")
         elif m.signal_to_noise_ratio < t.snr_warn:
             warn.append(
-                f"訊雜比觀察：整體 SNR {m.signal_to_noise_ratio:.2f} < {t.snr_warn}，"
+                f"單張空間雜訊觀察：SNR proxy {m.signal_to_noise_ratio:.2f} "
+                f"< {t.snr_warn}，"
                 "建議確認 gain、光源穩定度與環境遮光"
             )
             self._add_score(score_items, "SNR", "warn")

@@ -51,7 +51,9 @@ class ImageAnalyzer:
         m.auto_defect_area_px_sampled = defect.best_area_px
         m.auto_defect_count = defect.candidate_count
         m.robust_noise_sigma = defect.robust_noise_sigma
-        m.signal_to_noise_ratio = self._signal_to_noise_ratio(m.mean_gray, m.robust_noise_sigma)
+        m.signal_to_noise_ratio = self._spatial_snr_proxy(
+            m.mean_gray, m.robust_noise_sigma
+        )
 
         vs, hs = self._stripe_scores(sample)
         m.vertical_stripe_score = vs
@@ -93,7 +95,8 @@ class ImageAnalyzer:
         m.uniformity_ratio = float(ratio)
 
     @staticmethod
-    def _signal_to_noise_ratio(signal: float, noise_sigma: float) -> float:
+    def _spatial_snr_proxy(signal: float, noise_sigma: float) -> float:
+        """legacy 單張空間雜訊 proxy；不得稱為正式時域 SNR。"""
         return float(signal / max(noise_sigma, 1e-6))
 
     def _zone_means(self, sample: np.ndarray) -> Tuple[List[float], float]:

@@ -52,7 +52,7 @@ class BatchWindow(QMainWindow):
         "總分",
         "平均灰階",
         "均勻性",
-        "SNR",
+        "空間SNR proxy",
         "CNR",
         "背景std",
         "主要原因",

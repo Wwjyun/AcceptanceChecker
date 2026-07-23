@@ -53,6 +53,7 @@ class DriftReport:
 
     stats: List[DriftStats] = field(default_factory=list)
     mean_gray_spread: float = 0.0
+    mean_gray_drift_pct: float = 0.0
     drift_status: str = "PASS"  # 內部狀態值，依平均灰階漂移計算
     warnings: List[str] = field(default_factory=list)
 
@@ -60,8 +61,18 @@ class DriftReport:
 class DriftReporter:
     """把多張影像的 Metrics 匯整成跨圖一致性報告。"""
 
-    def __init__(self, thresholds: Thresholds | None = None):
+    def __init__(
+        self,
+        thresholds: Thresholds | None = None,
+        *,
+        drift_warn_pct: float = 3.0,
+        drift_fail_pct: float = 10.0,
+    ):
         self.thresholds = thresholds or Thresholds()
+        if not 0 <= drift_warn_pct < drift_fail_pct:
+            raise ValueError("drift 門檻必須滿足 0 ≤ warn < fail")
+        self.drift_warn_pct = drift_warn_pct
+        self.drift_fail_pct = drift_fail_pct
 
     def analyze(self, metrics_list: Sequence[Metrics]) -> DriftReport:
         report = DriftReport()
@@ -72,7 +83,10 @@ class DriftReporter:
             DriftStats.from_values("平均灰階", [m.mean_gray for m in metrics_list]),
             DriftStats.from_values("均勻性 min/max", [m.uniformity_ratio for m in metrics_list]),
             DriftStats.from_values("背景 std", [m.bg_std_est for m in metrics_list]),
-            DriftStats.from_values("整體 SNR", [m.signal_to_noise_ratio for m in metrics_list]),
+            DriftStats.from_values(
+                "單張空間 SNR proxy",
+                [m.signal_to_noise_ratio for m in metrics_list],
+            ),
             DriftStats.from_values("自動 CNR", [m.auto_defect_cnr_est for m in metrics_list]),
             DriftStats.from_values("P99-P01 展開", [m.hist_spread_p99_p01 for m in metrics_list]),
         ]
@@ -80,19 +94,28 @@ class DriftReporter:
 
         mean_gray_stats = stats[0]
         report.mean_gray_spread = mean_gray_stats.spread
-        # 沿用 hist_spread_* 門檻衡量跨圖平均灰階漂移（已為多圖預留）
-        if report.mean_gray_spread >= self.thresholds.hist_spread_fail:
+        reference = float(metrics_list[0].mean_gray)
+        report.mean_gray_drift_pct = (
+            max(abs(item.mean_gray - reference) for item in metrics_list)
+            / reference
+            * 100.0
+            if reference > 0
+            else 0.0
+        )
+        if reference <= 0:
+            report.drift_status = "FAIL"
+            report.warnings.append("首張平均灰階為 0，無法建立可靠漂移基準")
+        elif report.mean_gray_drift_pct > self.drift_fail_pct:
             report.drift_status = "FAIL"
             report.warnings.append(
-                f"平均灰階跨圖漂移 {report.mean_gray_spread:.1f} "
-                f"≥ 高風險門檻 {self.thresholds.hist_spread_fail:.1f}；"
-                "量產批間亮度窗口可能需要補償或重新收斂"
+                f"相對首張基準之最大灰階漂移 {report.mean_gray_drift_pct:.1f}% "
+                f"> 高風險門檻 {self.drift_fail_pct:.1f}%"
             )
-        elif report.mean_gray_spread >= self.thresholds.hist_spread_warn:
+        elif report.mean_gray_drift_pct > self.drift_warn_pct:
             report.drift_status = "WARNING"
             report.warnings.append(
-                f"平均灰階跨圖漂移 {report.mean_gray_spread:.1f} "
-                f"≥ 觀察門檻 {self.thresholds.hist_spread_warn:.1f}；"
+                f"相對首張基準之最大灰階漂移 {report.mean_gray_drift_pct:.1f}% "
+                f"> 觀察門檻 {self.drift_warn_pct:.1f}%；"
                 "建議確認光源衰減、相機增益與治具重複定位"
             )
         return report

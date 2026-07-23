@@ -67,7 +67,7 @@ def test_noise_and_snr_recommendations_include_gain_and_strobe_checks():
     m.signal_to_noise_ratio = 12.0
     m.bg_std_est = 12.0
     text = RecommendationBuilder().build(m, Thresholds())
-    assert "整體 SNR 偏低" in text
+    assert "單張空間 SNR proxy 偏低" in text
     assert "降低 gain" in text
     assert "光源閃爍" in text
 

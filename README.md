@@ -201,7 +201,8 @@ The analyzer records:
 - Basic intensity: mean, standard deviation, min/max, P01/P99, histogram spread.
 - Clipping: low and high clipping percentage.
 - Uniformity: five-zone brightness means and min/max uniformity ratio.
-- Noise: background standard deviation, robust noise sigma, and whole-image SNR.
+- Noise: background standard deviation, robust noise sigma, and a legacy single-image
+  spatial SNR proxy (formal temporal SNR requires at least 30 aligned frames).
 - Defect proxy: automatic candidate count, sampled area, CNR, and contrast.
 - Pattern proxy: vertical and horizontal stripe score.
 - Sharpness proxy: Laplacian variance.
@@ -252,7 +253,7 @@ Use this table to trace any report line back to the threshold field that control
 | 高灰階 clipping | 10 | `clipping_fail_pct` / `clipping_warn_pct` | `high_clip_pct` | 亮部 clipping 偏高 |
 | 灰階展開 | 10 | `hist_spread_fail` / `hist_spread_warn` | `hist_spread_p99_p01` | 灰階動態範圍偏窄 |
 | CNR | 20 | `cnr_fail` / `cnr_warn` | `auto_defect_cnr_est`, `auto_defect_count` | 缺陷 CNR 偏低 / 未找到自動候選缺陷 |
-| SNR | 10 | `snr_fail` / `snr_warn` | `signal_to_noise_ratio` | 整體 SNR 偏低 |
+| Single-image spatial SNR proxy | 10 | `snr_fail` / `snr_warn` | `signal_to_noise_ratio` | 單張空間 SNR proxy 偏低 |
 | 背景 std | 5 | `bg_std_fail` / `bg_std_warn` | `bg_std_est` | 背景雜訊或紋理偏高 |
 | 清晰度 | 5 | `sharpness_fail` / `sharpness_warn` | `sharpness_laplacian_var` | 清晰度偏低 |
 
@@ -327,6 +328,21 @@ sidecar. It records each source-relative path, file SHA-256, byte size, nanoseco
 mtime, image level, L1 calibration version, and sidecar path. Image level and
 calibration identity are never inferred from pixel data or filenames. The saved
 manifest includes its own integrity hash and rejects modified content when reloaded.
+
+## v4 temporal and stability measurements
+
+`TemporalAcceptanceMeasurer` consumes aligned L1 frames with one evidence source per
+frame. It computes mean per-pixel temporal sigma and temporal SNR only when `N >= 30`,
+plus repeatability CV, warm-reference drift at 30 minutes and 8 hours, five-cycle cold
+restart reproducibility, balanced crossed random-effects ANOVA R&R with at least ten
+handling/repositioning cycles, and temperature-window drift. Temperature evidence must
+cover seven continuous days with no gap over six hours; otherwise an apparently good
+numeric result is capped at S1.
+
+The legacy single-image `signal_to_noise_ratio` field remains for compatibility, but
+all user-facing labels identify it as a spatial SNR proxy. `DriftReporter` now uses
+relative drift from the first image with dedicated drift thresholds and no longer
+borrows histogram-spread thresholds.
 
 ## Validation
 

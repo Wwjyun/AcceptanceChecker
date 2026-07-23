@@ -149,10 +149,10 @@ class RecommendationBuilder:
         if m.signal_to_noise_ratio < t.snr_warn:
             items.append(
                 Recommendation(
-                    "整體 SNR 偏低",
+                    "單張空間 SNR proxy 偏低",
                     "先提高有效信號，例如增加光源亮度或曝光；若背景 std 同時偏高，"
-                    "先降低 gain、檢查光源閃爍與環境遮光，再重新評估 SNR。",
-                    labels=("SNR",),
+                    "先降低 gain、檢查光源閃爍與環境遮光，再以多張影像評估正式時域 SNR。",
+                    labels=("空間 SNR proxy",),
                 )
             )
 

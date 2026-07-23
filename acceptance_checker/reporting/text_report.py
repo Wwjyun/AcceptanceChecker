@@ -67,7 +67,7 @@ P99-P01 灰階展開：{m.hist_spread_p99_p01:.1f}
 最佳候選 contrast：{m.auto_defect_contrast_est:.3f}
 最佳候選 sampled area：{m.auto_defect_area_px_sampled}
 robust noise sigma：{m.robust_noise_sigma:.3f}
-整體 SNR：{m.signal_to_noise_ratio:.3f}
+單張空間 SNR proxy：{m.signal_to_noise_ratio:.3f}（非正式時域 SNR）
 
 【背景與條紋風險】
 背景 std proxy：{m.bg_std_est:.3f}
@@ -102,7 +102,8 @@ Laplacian variance：{m.sharpness_laplacian_var:.3f}
             f"- 均勻性 min/max < {t.uniformity_fail}：高風險；< {t.uniformity_warn}：觀察\n"
             f"- clipping > {t.clipping_fail_pct}%：高風險；> {t.clipping_warn_pct}%：觀察\n"
             f"- CNR < {t.cnr_fail}：高風險；< {t.cnr_warn}：觀察\n"
-            f"- SNR < {t.snr_fail}：高風險；< {t.snr_warn}：觀察\n"
+            f"- 單張空間 SNR proxy < {t.snr_fail}：高風險；"
+            f"< {t.snr_warn}：觀察（正式時域 SNR 需 N≥30）\n"
             f"- 背景 std > {t.bg_std_fail}：高風險；> {t.bg_std_warn}：觀察\n"
             f"- 清晰度 Laplacian Var < {t.sharpness_fail}：高風險；"
             f"< {t.sharpness_warn}：觀察\n"
@@ -155,7 +156,7 @@ Laplacian variance：{m.sharpness_laplacian_var:.3f}
             f"均勻性高風險<{t.uniformity_fail}/觀察<{t.uniformity_warn}；"
             f"clipping 高風險>{t.clipping_fail_pct}%/觀察>{t.clipping_warn_pct}%；"
             f"CNR 高風險<{t.cnr_fail}/觀察<{t.cnr_warn}；"
-            f"SNR 高風險<{t.snr_fail}/觀察<{t.snr_warn}；"
+            f"單張空間 SNR proxy 高風險<{t.snr_fail}/觀察<{t.snr_warn}；"
             f"背景 std 高風險>{t.bg_std_fail}/觀察>{t.bg_std_warn}；"
             f"清晰度高風險<{t.sharpness_fail}/觀察<{t.sharpness_warn}；"
             f"灰階展開高風險<{t.hist_spread_fail}/觀察<{t.hist_spread_warn}。"
@@ -208,7 +209,7 @@ Laplacian variance：{m.sharpness_laplacian_var:.3f}
             ),
             f"CNR：{cnr_note}",
             self._lower_limit_note(
-                "整體 SNR",
+                "單張空間 SNR proxy",
                 m.signal_to_noise_ratio,
                 t.snr_warn,
                 t.snr_fail,

@@ -38,6 +38,7 @@ class Metrics:
 
     bg_std_est: float = 0.0
     robust_noise_sigma: float = 0.0
+    # legacy 欄位名；實值是單張 mean / robust spatial sigma proxy，不是時域 SNR。
     signal_to_noise_ratio: float = 0.0
 
     auto_defect_cnr_est: float = 0.0
