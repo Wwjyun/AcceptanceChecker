@@ -117,6 +117,55 @@ from acceptance_checker.reporting import HistoryLogger
 HistoryLogger().append(result.metrics, "history.csv")
 ```
 
+## v4 Acceptance Domain Model (foundation)
+
+The formal v4 acceptance workflow is being added separately from the existing single-image
+weighted quick check. The foundation types are independent from Qt and OpenCV:
+
+```python
+from acceptance_checker import (
+    AcceptanceManifest,
+    AcceptanceSession,
+    ImageLevel,
+    MeasurementResult,
+    MetricGroup,
+    OpticalMode,
+    Severity,
+)
+
+session = AcceptanceSession(
+    manifest=AcceptanceManifest(
+        machine_id="AOI-01",
+        optical_mode=OpticalMode.DIFFUSE_BRIGHT_FIELD,
+        spec_version="v4-draft",
+    )
+)
+session.add_measurement(
+    MeasurementResult(
+        metric_id="g1.background_uniformity",
+        group=MetricGroup.G1,
+        severity=Severity.S2,
+        value=0.88,
+        unit="ratio",
+        formula_version="v4-draft",
+        image_level=ImageLevel.L1,
+        roi_id="background",
+        sample_count=1,
+        evidence_sources=["images/frame-001.tif"],
+    )
+)
+
+session.save_json("acceptance-session.json")
+print(session.group_status_values())
+```
+
+An absent group or required measurement remains `NOT_EVALUATED`; it is never silently treated
+as S3. `LegacyMetricsAdapter` can retain current `Metrics` values as traceable engineering
+evidence, but marks every adapted value `NOT_EVALUATED` because the quick-check fields lack the
+mode-specific ROI, raw-bit-depth, multi-image, or Golden evidence required by v4. The current
+`quality_score`, `risk_level`, and `overall_status` therefore remain legacy engineering signals,
+not formal v4 acceptance results.
+
 ## Metrics
 
 The analyzer records:

@@ -49,15 +49,15 @@
 
 ### P0.1 建立 v4 領域模型
 
-- [ ] 新增不依賴 Qt 的列舉與資料類別：
+- [x] 新增不依賴 Qt 的列舉與資料類別：
   - `OpticalMode`：`DIFFUSE_BRIGHT_FIELD`、`SPECULAR_BRIGHT_FIELD`、`SCATTERING_DARK_FIELD`
   - `ImageLevel`：`L0`、`L1`、`L2`
   - `Severity`：`S3`、`S2`、`S1`、`S0`、`NOT_EVALUATED`
   - `MetricGroup`：`G1`～`G6`
   - `OverallResult`：驗收通過、有條件通過、驗收不通過、致命失效、證據不足
-- [ ] 新增 `MeasurementResult`，至少保存 metric id、數值、單位、等級、公式版本、ROI、樣本數、影像層級、證據來源與未評估原因。
-- [ ] 新增 `AcceptanceSession` / `AcceptanceManifest`，代表一台機台的一輪驗收，而不是把互不相干的圖片直接當同一批。
-- [ ] 舊 `Metrics` 暫時保留；新增明確 adapter，禁止把舊欄位名稱直接當作 v4 已驗證指標。
+- [x] 新增 `MeasurementResult`，至少保存 metric id、數值、單位、等級、公式版本、ROI、樣本數、影像層級、證據來源與未評估原因。
+- [x] 新增 `AcceptanceSession` / `AcceptanceManifest`，代表一台機台的一輪驗收，而不是把互不相干的圖片直接當同一批。
+- [x] 舊 `Metrics` 暫時保留；新增明確 adapter，禁止把舊欄位名稱直接當作 v4 已驗證指標。
 
 驗收條件：
 
