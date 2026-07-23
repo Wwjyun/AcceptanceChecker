@@ -72,8 +72,26 @@ from .golden_catalog import (
 from .image import MeasurementPlaneError, RawImage
 from .judge import AcceptanceJudge
 from .legacy_adapter import LegacyMetricsAdapter, legacy_metrics_to_measurements
+from .loglog_analysis import (
+    BrightnessPoint,
+    LogLogAnalysisError,
+    LogLogAnalysisResult,
+    LogLogAnalyzer,
+    PowerLawFit,
+)
 from .metrics import Metrics
 from .pipeline import AcceptancePipeline, AnalysisResult
+from .responsibility import (
+    CorrelationAssessment,
+    DiagnosticAttachment,
+    ResponsibilityAction,
+    ResponsibilityAnalyzer,
+    ResponsibilityError,
+    ResponsibilityReport,
+    ReviewParty,
+    TechnicalObjection,
+    ThreePartyPosition,
+)
 from .roi import (
     RoiCollection,
     RoiCreationMethod,
@@ -179,6 +197,20 @@ __all__ = [
     "G6Measurer",
     "clopper_pearson_upper",
     "wilson_interval",
+    "BrightnessPoint",
+    "LogLogAnalysisError",
+    "LogLogAnalysisResult",
+    "LogLogAnalyzer",
+    "PowerLawFit",
+    "CorrelationAssessment",
+    "DiagnosticAttachment",
+    "ResponsibilityAction",
+    "ResponsibilityAnalyzer",
+    "ResponsibilityError",
+    "ResponsibilityReport",
+    "ReviewParty",
+    "TechnicalObjection",
+    "ThreePartyPosition",
     "RawImage",
     "MeasurementPlaneError",
     "AcceptanceJudge",

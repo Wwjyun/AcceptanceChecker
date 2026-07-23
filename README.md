@@ -436,6 +436,23 @@ left, center, right, and stitch regions with per-region ratios and intervals.
 A stable NG miss, an approved effective defect width below two pixels, or an
 evidence-backed unrecognizable minimum defect produces an S0 priority event.
 
+## v4 responsibility and appendix-B diagnostics
+
+`ResponsibilityAnalyzer` orders remediation by failed group and section 14
+ownership. Any G1–G5 S1/S0 explicitly prohibits L2 acceptance remedies and
+keeps software in a measurement/analysis role until upstream capability is
+repaired. Section 14.1 S2-to-G6 links are emitted only as
+`presumed_pending_three_party_confirmation`; they never replace imaging,
+software, and quality confirmation or diagnostic evidence. Written technical
+objections, three-party positions, and hashed appendix-B attachments remain
+alongside the recommendation.
+
+`LogLogAnalyzer` implements the appendix-B single-variable brightness test. It
+requires at least five unique positive brightness points and at least 30
+spatial-STD and 30 temporal-noise observations per point, keeps the two signals
+separate, fits `y = a × brightness^b`, reports `a`, exponent `b`, and R², and
+exports an auditable SVG regression graph.
+
 ## Validation
 
 Run the core test suite:
