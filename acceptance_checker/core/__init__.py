@@ -26,6 +26,12 @@ from .v4_domain import (
     OverallResult,
     Severity,
 )
+from .v4_judge import (
+    S0PriorityEvent,
+    S0PriorityEventType,
+    V4AcceptanceJudge,
+    V4Decision,
+)
 
 __all__ = [
     "ImageAnalyzer",
@@ -55,4 +61,8 @@ __all__ = [
     "OpticalMode",
     "OverallResult",
     "Severity",
+    "S0PriorityEvent",
+    "S0PriorityEventType",
+    "V4AcceptanceJudge",
+    "V4Decision",
 ]

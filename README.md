@@ -188,6 +188,12 @@ single-number classification. The source documents leave dark-field background m
 being guessed into a passing band. Loading rejects unsupported schema versions, missing rows,
 duplicate metric IDs, invalid requirement profiles, and malformed numeric thresholds.
 
+`V4AcceptanceJudge` implements the ordered decision table from v4 section 13.2. It checks the
+five section 4.2 priority-event types first, then G5/G6 S0, multiple S0 groups, a single G1–G4
+S0, any S1, and finally the accepted/conditionally-accepted rules. The returned `V4Decision`
+includes the matched rule number, trigger groups and metric IDs, priority event types, and
+missing evidence. Any `NOT_EVALUATED` group blocks rules 6 and 7.
+
 ## Metrics
 
 The analyzer records:
