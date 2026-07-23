@@ -116,6 +116,32 @@ artifact manifest, and all three imaging/software/quality signoffs in its review
 For formal `judge` and `report`, `--no-gate` only changes the process exit code. The serialized
 `OverallResult`, matched rule, reasons, and report wording remain byte-for-byte the same.
 
+### Legacy data migration
+
+Legacy thresholds, full Metrics CSV exports, and append-only history logs can be preserved as
+explicit engineering-reference bundles:
+
+```bash
+python -m acceptance_checker.cli migrate-legacy threshold thresholds.default.json --output migrated-thresholds.json
+python -m acceptance_checker.cli migrate-legacy csv history.csv --machine-id AOI-01 \
+  --mode diffuse_bright_field --output migrated-history.json
+```
+
+The CSV command requires an explicit machine ID and optical mode because old files do not carry
+enough evidence to infer them. Every converted proxy is `L2 / NOT_EVALUATED`; the bundle sets
+`engineering_reference_only=true` and `formal_v4_grade_allowed=false`. It never fabricates an
+S0–S3 grade.
+
+| Field | Scope | Meaning |
+| --- | --- | --- |
+| `quality_score` | Legacy quick check | Weighted 0–100 engineering ranking signal; not a formal acceptance gate |
+| `overall_status` | Legacy quick check | Stable `PASS` / `WARNING` / `FAIL` derived from the weighted score |
+| `OverallResult` | Formal v4 Session | Ordered section 13.2 result derived from S0–S3 groups, priority events, and evidence completeness |
+
+`AcceptancePipeline.run()` remains available during the `0.1.x` compatibility cycle and emits a
+`DeprecationWarning` identifying it as the legacy quick engineering check. New integrations
+should use `SessionWorkflow`.
+
 ## Python API
 
 ```python

@@ -289,10 +289,10 @@
 
 ### P6.2 相容性與資料移轉
 
-- [ ] 提供 legacy threshold、CSV、history log 的讀取/轉換工具。
-- [ ] 舊資料缺少 v4 必填證據時，轉換結果標示「僅供工程參考」，不補造正式等級。
-- [ ] 文件說明 `quality_score`、legacy `overall_status` 與 v4 `OverallResult` 的差異。
-- [ ] 在至少一個版本內保留舊 API deprecation warning，再決定移除時程。
+- [x] 提供 legacy threshold、CSV、history log 的讀取/轉換工具。
+- [x] 舊資料缺少 v4 必填證據時，轉換結果標示「僅供工程參考」，不補造正式等級。
+- [x] 文件說明 `quality_score`、legacy `overall_status` 與 v4 `OverallResult` 的差異。
+- [x] 在至少一個版本內保留舊 API deprecation warning，再決定移除時程。
 
 ### P6.3 發布完成條件
 

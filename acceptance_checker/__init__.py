@@ -12,6 +12,7 @@ AOI Raw Image 光學驗收檢查工具 (OOP 版)
 __version__ = "0.1.0"
 
 from .core import (
+    LEGACY_REFERENCE_NOTICE,
     AcceptanceDatasetManifest,
     AcceptanceJudge,
     AcceptanceManifest,
@@ -63,6 +64,7 @@ from .core import (
     ImageObservation,
     InterCameraGrayEvidence,
     LegacyMetricsAdapter,
+    LegacyMigrationBundle,
     LogLogAnalysisError,
     LogLogAnalysisResult,
     LogLogAnalyzer,
@@ -136,6 +138,8 @@ from .core import (
     load_v4_spec,
     measure_16_zones,
     measure_raw_16_zones,
+    migrate_legacy_csv,
+    migrate_legacy_threshold_profile,
     partition_sessions,
     sha256_file,
     sidecar_candidates,
@@ -211,6 +215,7 @@ __all__ = [
     "ImageObservation",
     "InterCameraGrayEvidence",
     "LegacyMetricsAdapter",
+    "LegacyMigrationBundle",
     "ManifestError",
     "MeasurementPlaneError",
     "MetricSpecification",
@@ -249,6 +254,9 @@ __all__ = [
     "build_image_evidence",
     "clopper_pearson_upper",
     "legacy_metrics_to_measurements",
+    "LEGACY_REFERENCE_NOTICE",
+    "migrate_legacy_csv",
+    "migrate_legacy_threshold_profile",
     "load_default_v4_spec",
     "load_image_sidecar",
     "load_v4_spec",

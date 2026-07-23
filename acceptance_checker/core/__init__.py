@@ -81,6 +81,12 @@ from .loglog_analysis import (
     PowerLawFit,
 )
 from .metrics import Metrics
+from .migration import (
+    LEGACY_REFERENCE_NOTICE,
+    LegacyMigrationBundle,
+    migrate_legacy_csv,
+    migrate_legacy_threshold_profile,
+)
 from .pipeline import AcceptancePipeline, AnalysisResult
 from .responsibility import (
     CorrelationAssessment,
@@ -241,6 +247,10 @@ __all__ = [
     "LegacyMetricsAdapter",
     "legacy_metrics_to_measurements",
     "Metrics",
+    "LEGACY_REFERENCE_NOTICE",
+    "LegacyMigrationBundle",
+    "migrate_legacy_csv",
+    "migrate_legacy_threshold_profile",
     "AcceptancePipeline",
     "AnalysisResult",
     "RoiCollection",

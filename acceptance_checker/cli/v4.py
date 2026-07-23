@@ -11,8 +11,11 @@ from typing import List, Optional
 
 from ..core import (
     AcceptanceSession,
+    OpticalMode,
     SessionWorkflow,
     WorkflowError,
+    migrate_legacy_csv,
+    migrate_legacy_threshold_profile,
 )
 from ..reporting import (
     build_formal_report,
@@ -23,7 +26,7 @@ from ..reporting import (
 
 logger = logging.getLogger("acceptance_checker.cli.v4")
 
-COMMANDS = {"validate-manifest", "measure", "judge", "report"}
+COMMANDS = {"validate-manifest", "measure", "judge", "report", "migrate-legacy"}
 _GATE_FAILURES = {
     "fatal_stop",
     "rejected_retest",
@@ -43,6 +46,8 @@ def main(argv: Optional[List[str]] = None) -> int:
             return _judge(args)
         if args.command == "report":
             return _report(args)
+        if args.command == "migrate-legacy":
+            return _migrate_legacy(args)
     except (OSError, ValueError, KeyError, WorkflowError) as exc:
         logger.error("%s", exc)
         return 2
@@ -103,6 +108,20 @@ def _parser() -> argparse.ArgumentParser:
         "--no-gate",
         action="store_true",
         help="只把外部程序 exit code 改為 0；報告內正式結果保持不變",
+    )
+
+    migrate = subparsers.add_parser(
+        "migrate-legacy",
+        help="把 legacy threshold／CSV／history log 轉為僅供工程參考的 JSON",
+    )
+    migrate.add_argument("kind", choices=["threshold", "csv"])
+    migrate.add_argument("input")
+    migrate.add_argument("--output", required=True)
+    migrate.add_argument("--machine-id", help="CSV/history migration required")
+    migrate.add_argument(
+        "--mode",
+        choices=[mode.value for mode in OpticalMode],
+        help="CSV/history migration required; legacy data cannot infer optical mode",
     )
     return parser
 
@@ -201,6 +220,37 @@ def _report(args: argparse.Namespace) -> int:
     return _gate_exit(decision.result.value, args.no_gate)
 
 
+def _migrate_legacy(args: argparse.Namespace) -> int:
+    if args.kind == "threshold":
+        bundle = migrate_legacy_threshold_profile(args.input)
+    else:
+        if not args.machine_id or not args.mode:
+            raise WorkflowError(
+                "legacy CSV/history migration requires --machine-id and --mode; "
+                "the tool will not guess missing v4 identity"
+            )
+        bundle = migrate_legacy_csv(
+            args.input,
+            machine_id=args.machine_id,
+            optical_mode=OpticalMode(args.mode),
+        )
+    bundle.save_json(args.output)
+    print(
+        json.dumps(
+            {
+                "output": str(Path(args.output).resolve()),
+                "source_type": bundle.source_type,
+                "record_count": len(bundle.records),
+                "engineering_reference_only": True,
+                "formal_v4_grade_allowed": False,
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
+    return 0
+
+
 def _decision_payload(decision) -> dict:
     return {
         "result": decision.result.value,
@@ -235,6 +285,7 @@ def top_level_help() -> str:
   measure            執行／匯入 G1-G6 量測套件
   judge              依第 13.2 節產生正式判定
   report             產生 JSON／HTML／PDF 正式報告
+  migrate-legacy     轉換舊 threshold／CSV／history（僅供工程參考）
 
 快速工程檢查（不是完整 v4 驗收）：
   quick-check IMAGE... [legacy options]

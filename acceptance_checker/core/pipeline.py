@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import os
+import warnings
 from collections import OrderedDict
 from dataclasses import dataclass
 from typing import Optional, Tuple
@@ -63,6 +64,13 @@ class AcceptancePipeline:
         self._cache.clear()
 
     def run(self, file_path: str) -> AnalysisResult:
+        warnings.warn(
+            "AcceptancePipeline.run() is the legacy quick engineering check, not "
+            "formal v4 acceptance. Use SessionWorkflow for new integrations; "
+            "the legacy API remains available through the 0.1.x compatibility cycle.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         key = self._cache_key(file_path)
         if key is not None and key in self._cache:
             self._cache.move_to_end(key)
