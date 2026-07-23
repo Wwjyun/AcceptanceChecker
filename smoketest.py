@@ -271,6 +271,8 @@ def check_gui() -> None:
     # 模擬使用者框選 ROI，驗證人工 CNR 更新流程不炸
     window.on_roi_selected(436, 286, 28, 28)
     assert "ROI" in window.status_label.text()
+    assert window.last_manual_roi is not None
+    assert window.last_manual_roi.box == (436, 286, 28, 28)
     app.processEvents()
     window.close()
 

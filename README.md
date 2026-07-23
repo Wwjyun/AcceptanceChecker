@@ -293,6 +293,19 @@ Because rejection is not practically enforceable, the following features exist s
 
 None of these features change `overall_status`, the per-metric thresholds, or the weighted score itself — they are purely additive layers for prioritization, severity triage, historical traceability, and audit trail.
 
+## v4 ROI and 16-zone measurements
+
+Formal v4 ROI definitions live in `acceptance_checker.core.roi`. Every ROI records its
+type, original-image coordinates, creation method, operator, version, applicable image,
+and optional metadata. `RoiCollection` supports UTF-8 JSON and CSV import/export,
+boundary and overlap checks, and fixed-recipe application across a batch. Imported ROI
+coordinates are never interpreted as preview coordinates.
+
+`measure_raw_16_zones()` divides the effective inspection width into exactly 16 zones
+and reports each mean in `%FS`, together with `U = min / max` and the max-to-min
+brightness difference. GUI drag selection is also converted from the sampled preview
+back to an auditable original-image ROI.
+
 ## Validation
 
 Run the core test suite:

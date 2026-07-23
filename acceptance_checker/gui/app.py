@@ -29,6 +29,7 @@ from ..core.detector import roi_cnr
 from ..core.image import imwrite_unicode
 from ..core.io_utils import validate_save_path
 from ..core.pipeline import AcceptancePipeline, AnalysisResult
+from ..core.roi import RoiCreationMethod, RoiDefinition, RoiType
 from ..reporting import CsvExporter, ReportBuilder
 from .preview import ImagePreview
 from .roi_label import RoiSelectLabel
@@ -51,6 +52,7 @@ class AcceptanceCheckerWindow(QMainWindow):
         self.preview = ImagePreview()
 
         self.result: Optional[AnalysisResult] = None
+        self.last_manual_roi: Optional[RoiDefinition] = None
 
         # 背景分析執行緒相關
         self._thread: Optional[QThread] = None
@@ -257,6 +259,19 @@ class AcceptanceCheckerWindow(QMainWindow):
         """使用者於預覽框選 ROI：以 sample 影像量測人工 CNR 並顯示。"""
         if self.result is None:
             return
+        step = max(1, int(self.result.metrics.analysis_step))
+        self.last_manual_roi = RoiDefinition.from_sample_box(
+            roi_id="gui-manual-roi",
+            roi_type=RoiType.GOLDEN_DEFECT,
+            sample_box=(x, y, w, h),
+            step=step,
+            image_width=int(self.result.metrics.width_px),
+            image_height=int(self.result.metrics.height_px),
+            creation_method=RoiCreationMethod.GUI_MANUAL,
+            operator="",
+            version="1",
+            image_id=self.result.metrics.file_name or "current-image",
+        )
         r = roi_cnr(self.result.sample, (x, y, w, h))
         if r.defect_area_px == 0:
             self.status_label.setText("ROI 太小或超出範圍，請重新框選")
@@ -265,7 +280,7 @@ class AcceptanceCheckerWindow(QMainWindow):
             f"人工 ROI CNR：{r.cnr:.2f}"
             f"（缺陷均值 {r.defect_mean:.1f} / 背景均值 {r.bg_mean:.1f} / "
             f"對比 {r.contrast:.1f} / 背景std {r.bg_std:.2f} / "
-            f"ROI {r.defect_area_px}px）"
+            f"ROI {r.defect_area_px}px；原圖座標 {self.last_manual_roi.box}）"
         )
 
     def _update_report(self) -> None:

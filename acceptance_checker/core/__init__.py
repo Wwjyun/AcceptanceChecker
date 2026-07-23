@@ -9,6 +9,19 @@ from .judge import AcceptanceJudge
 from .legacy_adapter import LegacyMetricsAdapter, legacy_metrics_to_measurements
 from .metrics import Metrics
 from .pipeline import AcceptancePipeline, AnalysisResult
+from .roi import (
+    RoiCollection,
+    RoiCreationMethod,
+    RoiDefinition,
+    RoiError,
+    RoiType,
+    RoiValidationIssue,
+    ZoneMeasurement,
+    apply_fixed_rois,
+    extract_rois,
+    measure_16_zones,
+    measure_raw_16_zones,
+)
 from .specification import (
     MetricSpecification,
     SpecificationError,
@@ -48,6 +61,17 @@ __all__ = [
     "Metrics",
     "AcceptancePipeline",
     "AnalysisResult",
+    "RoiCollection",
+    "RoiCreationMethod",
+    "RoiDefinition",
+    "RoiError",
+    "RoiType",
+    "RoiValidationIssue",
+    "ZoneMeasurement",
+    "apply_fixed_rois",
+    "extract_rois",
+    "measure_16_zones",
+    "measure_raw_16_zones",
     "MetricSpecification",
     "SpecificationError",
     "V4Specification",
