@@ -255,6 +255,10 @@ def check_gui() -> None:
     app = QApplication.instance() or QApplication([])
     window = AcceptanceCheckerWindow()
     window.show()
+    assert window.mode_tabs.currentIndex() == 0
+    assert "正式 v4 Session" in window.mode_tabs.tabText(0)
+    assert "非完整 v4" in window.mode_tabs.tabText(1)
+    assert window.session_workflow.pages.count() == 6
 
     # 直接把一張分析結果塞進畫面，驗證更新流程不炸
     from acceptance_checker import RawImage
@@ -315,6 +319,8 @@ def check_cli() -> None:
     from acceptance_checker.core.image import imwrite_unicode
 
     with tempfile.TemporaryDirectory() as d:
+        # 頂層 help 必須清楚區分正式 v4 與 legacy quick check。
+        assert main(["--help"]) == 0
         paths = []
         for i in range(3):
             p = os.path.join(d, f"cli_{i}.png")

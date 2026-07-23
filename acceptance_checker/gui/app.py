@@ -4,11 +4,13 @@
 from __future__ import annotations
 
 import logging
+import os
 import sys
 from datetime import datetime
 from typing import Optional
 
 from PySide6.QtCore import Qt, QThread
+from PySide6.QtGui import QFont, QFontDatabase
 from PySide6.QtWidgets import (
     QApplication,
     QFileDialog,
@@ -19,6 +21,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QSplitter,
+    QTabWidget,
     QTextEdit,
     QVBoxLayout,
     QWidget,
@@ -33,6 +36,7 @@ from ..core.roi import RoiCreationMethod, RoiDefinition, RoiType
 from ..reporting import CsvExporter, ReportBuilder
 from .preview import ImagePreview
 from .roi_label import RoiSelectLabel
+from .session_workflow import SessionWorkflowWidget
 from .threshold_dialog import ThresholdDialog
 from .worker import AnalysisWorker
 
@@ -58,9 +62,25 @@ class AcceptanceCheckerWindow(QMainWindow):
         self._thread: Optional[QThread] = None
         self._worker: Optional[AnalysisWorker] = None
 
-        self.setWindowTitle("AOI Raw Image 光學驗收檢查工具")
+        self._ensure_cjk_font()
+        self.setWindowTitle("AcceptanceChecker｜正式 v4 驗收與快速工程檢查")
         self.resize(1280, 820)
         self._build_ui()
+
+    def _ensure_cjk_font(self) -> None:
+        """Load a bundled OS CJK font when the offscreen platform cannot discover it."""
+        candidates = (
+            (r"C:\Windows\Fonts\msjh.ttc", "Microsoft JhengHei UI"),
+            ("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc", "Noto Sans CJK TC"),
+            ("/System/Library/Fonts/PingFang.ttc", "PingFang TC"),
+        )
+        for path, family in candidates:
+            if not os.path.isfile(path):
+                continue
+            font_id = QFontDatabase.addApplicationFont(path)
+            if font_id >= 0:
+                self.setFont(QFont(family, 9))
+                return
 
     # ---------- UI 建構 ----------
 
@@ -68,6 +88,23 @@ class AcceptanceCheckerWindow(QMainWindow):
         central = QWidget()
         self.setCentralWidget(central)
         root = QVBoxLayout(central)
+        self.mode_tabs = QTabWidget()
+        root.addWidget(self.mode_tabs)
+        self.session_workflow = SessionWorkflowWidget()
+        self.mode_tabs.addTab(self.session_workflow, "正式 v4 Session")
+
+        quick_check = QWidget()
+        quick_root = QVBoxLayout(quick_check)
+        quick_notice = QLabel(
+            "快速工程檢查：此頁使用 legacy quality_score／overall_status，"
+            "不是完整 v4 驗收，也不會產生正式 S0～S3 結論。"
+        )
+        quick_notice.setWordWrap(True)
+        quick_notice.setStyleSheet(
+            "background:#fff3cd;border:1px solid #d6b656;padding:8px;"
+        )
+        quick_root.addWidget(quick_notice)
+        self.mode_tabs.addTab(quick_check, "快速工程檢查（非完整 v4）")
 
         # 頂部工具列
         top = QHBoxLayout()
@@ -87,18 +124,18 @@ class AcceptanceCheckerWindow(QMainWindow):
             top.addWidget(w)
         top.addWidget(self.status_label)
         top.addStretch(1)
-        root.addLayout(top)
+        quick_root.addLayout(top)
 
         note_row = QHBoxLayout()
         note_row.addWidget(QLabel("放行備註/理由（選填，會寫入 CSV）："))
         self.note_edit = QLineEdit()
         self.note_edit.setPlaceholderText("例如：線壓不足暫時放行，已知風險為背景雜訊偏高")
         note_row.addWidget(self.note_edit, 1)
-        root.addLayout(note_row)
+        quick_root.addLayout(note_row)
 
         # 左右分割
         splitter = QSplitter(Qt.Orientation.Horizontal)
-        root.addWidget(splitter, 1)
+        quick_root.addWidget(splitter, 1)
 
         # 左：預覽
         left = QWidget()

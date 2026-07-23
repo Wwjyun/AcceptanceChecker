@@ -14,6 +14,12 @@ from .formal_report import (
 )
 from .history_log import HistoryLogger
 from .recommendations import Recommendation, RecommendationBuilder
+from .report_factory import (
+    build_formal_report,
+    export_formal_report,
+    load_report_config,
+    report_config_template,
+)
 from .text_report import ReportBuilder
 
 __all__ = [
@@ -32,4 +38,8 @@ __all__ = [
     "ReportArtifact",
     "ReportSignoff",
     "TestObject",
+    "build_formal_report",
+    "export_formal_report",
+    "load_report_config",
+    "report_config_template",
 ]

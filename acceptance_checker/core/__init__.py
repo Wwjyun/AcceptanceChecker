@@ -105,6 +105,13 @@ from .roi import (
     measure_16_zones,
     measure_raw_16_zones,
 )
+from .session_workflow import (
+    EvidenceCheck,
+    EvidenceIssue,
+    SessionWorkflow,
+    WorkflowError,
+    WorkflowStep,
+)
 from .specification import (
     MetricSpecification,
     SpecificationError,
@@ -221,6 +228,11 @@ __all__ = [
     "ReviewParty",
     "TechnicalObjection",
     "ThreePartyPosition",
+    "EvidenceCheck",
+    "EvidenceIssue",
+    "SessionWorkflow",
+    "WorkflowError",
+    "WorkflowStep",
     "RawImage",
     "MeasurementPlaneError",
     "AcceptanceJudge",

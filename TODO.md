@@ -268,11 +268,11 @@
 
 ### P5.4 GUI 與 CLI 遷移
 
-- [ ] GUI 改為 session workflow：建立/載入 manifest → 選模式 → 檢查證據 → 執行量測 → 檢閱未評估項 → 產生報告。
-- [ ] 新增群組總覽、S0 優先事件、判定順位、證據缺口與來源追蹤頁。
-- [ ] CLI 新增 `validate-manifest`、`measure`、`judge`、`report` 等可組合子命令。
-- [ ] `--no-gate` 只影響外部程序 exit code，不改正式 v4 結果與報告文字。
-- [ ] 舊單張分析入口保留為「快速工程檢查」，UI/CLI 明確標示不是完整 v4 驗收。
+- [x] GUI 改為 session workflow：建立/載入 manifest → 選模式 → 檢查證據 → 執行量測 → 檢閱未評估項 → 產生報告。
+- [x] 新增群組總覽、S0 優先事件、判定順位、證據缺口與來源追蹤頁。
+- [x] CLI 新增 `validate-manifest`、`measure`、`judge`、`report` 等可組合子命令。
+- [x] `--no-gate` 只影響外部程序 exit code，不改正式 v4 結果與報告文字。
+- [x] 舊單張分析入口保留為「快速工程檢查」，UI/CLI 明確標示不是完整 v4 驗收。
 
 ---
 

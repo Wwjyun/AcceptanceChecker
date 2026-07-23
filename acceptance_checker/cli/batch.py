@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
-"""命令列批次分析：不開 GUI，直接對一或多張圖輸出判定與 CSV。
+"""快速工程檢查：不開 GUI，對一或多張圖輸出 legacy 分數與 CSV。
+
+此入口不是完整 v4 驗收；正式流程請使用 validate-manifest、measure、
+judge、report 等可組合子命令。
 
 用法：
     python -m acceptance_checker.cli image1.bmp image2.tif
@@ -50,7 +53,29 @@ def analyze_one(
 
 
 def main(argv: Optional[List[str]] = None) -> int:
-    parser = argparse.ArgumentParser(description="AOI raw image 批次驗收")
+    from .v4 import COMMANDS, top_level_help
+    from .v4 import main as v4_main
+
+    actual = list(argv) if argv is not None else None
+    if actual is None:
+        import sys
+
+        actual = sys.argv[1:]
+    if actual and actual[0] in COMMANDS:
+        return v4_main(actual)
+    if actual and actual[0] == "quick-check":
+        return legacy_main(actual[1:])
+    if not actual or actual[0] in {"-h", "--help"}:
+        print(top_level_help())
+        return 0
+    return legacy_main(actual)
+
+
+def legacy_main(argv: Optional[List[str]] = None) -> int:
+    parser = argparse.ArgumentParser(
+        prog="acceptance-checker-cli quick-check",
+        description="快速工程檢查（legacy 分數；不是完整 v4 驗收）",
+    )
     parser.add_argument("images", nargs="+", help="要分析的影像檔")
     parser.add_argument("--csv", dest="csv_path", help="彙整結果輸出的 CSV 路徑")
     parser.add_argument("--quiet", action="store_true", help="只印狀態，不印完整報告")

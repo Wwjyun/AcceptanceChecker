@@ -6,8 +6,8 @@ AcceptanceChecker is a Python AOI raw-image acceptance tool. It analyzes inspect
 
 The project provides:
 
-- A PySide6 desktop GUI for opening images, viewing overlays, selecting ROI, tuning thresholds, entering a review note, and exporting results.
-- A batch CLI for scripted analysis, CSV export, threshold JSON loading, parallel processing, drift summaries, cross-batch history logging, and review notes.
+- A PySide6 desktop GUI whose default tab guides a formal v4 Session from manifest and evidence checks through measurement, ordered judgment, evidence-gap review, provenance, and report export.
+- A composable formal CLI (`validate-manifest`, `measure`, `judge`, `report`) plus a clearly separated legacy quick-check CLI for single-image engineering analysis.
 - A reusable Python API under `acceptance_checker`.
 - Pytest, Ruff, Mypy, and an offscreen GUI smoke test for validation.
 
@@ -31,13 +31,20 @@ pip install -e ".[dev]"
 
 ## Quick Start
 
-Run the GUI:
+Run the GUI (it opens on the formal v4 Session workflow):
 
 ```bash
 python main.py
 ```
 
-Run batch analysis from the CLI:
+Run the legacy image-score batch analysis. This is a **quick engineering check, not a
+complete v4 acceptance**:
+
+```bash
+python -m acceptance_checker.cli quick-check image1.bmp image2.tif
+```
+
+Passing images directly remains supported for one compatibility version:
 
 ```bash
 python -m acceptance_checker.cli image1.bmp image2.tif
@@ -87,6 +94,28 @@ CLI exit codes:
 
 `--no-gate` does not change the report text, `risk_level`, or CSV output — it only changes whether exit code `1` is ever returned. Use it when the exit code is consumed by automation that should not fail a build/pipeline purely because an image scored low; keep the default behavior when a human or script genuinely wants to know "did anything fail" via the process exit code.
 
+### Formal v4 CLI workflow
+
+The formal workflow is composable, so every intermediate artifact can be reviewed or
+recomputed:
+
+```bash
+python -m acceptance_checker.cli validate-manifest dataset_manifest.json
+python -m acceptance_checker.cli measure dataset_manifest.json measurements.json --output session.json
+python -m acceptance_checker.cli judge session.json --output judged-session.json
+python -m acceptance_checker.cli report judged-session.json --write-config-template report-config.json
+python -m acceptance_checker.cli report judged-session.json --config report-config.json --output-dir reports
+```
+
+`measurements.json` is the machine-readable output package from the formal G1–G6 measurers; it
+contains `measurements` and optional `priority_events`. The command validates the dataset files
+and hashes before importing those results. It never treats legacy `quality_score` values as v4
+measurements. The report command requires the test object, optical declaration, improvements,
+artifact manifest, and all three imaging/software/quality signoffs in its reviewed config.
+
+For formal `judge` and `report`, `--no-gate` only changes the process exit code. The serialized
+`OverallResult`, matched rule, reasons, and report wording remain byte-for-byte the same.
+
 ## Python API
 
 ```python
@@ -117,10 +146,10 @@ from acceptance_checker.reporting import HistoryLogger
 HistoryLogger().append(result.metrics, "history.csv")
 ```
 
-## v4 Acceptance Domain Model (foundation)
+## v4 Acceptance Domain Model and Session Workflow
 
-The formal v4 acceptance workflow is being added separately from the existing single-image
-weighted quick check. The foundation types are independent from Qt and OpenCV:
+The formal v4 acceptance workflow is separate from the existing single-image weighted quick
+check. Its domain and ordered workflow types are independent from Qt and OpenCV:
 
 ```python
 from acceptance_checker import (
