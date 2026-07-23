@@ -1,104 +1,328 @@
-# 優化 TODO
+# AcceptanceChecker v4 實作路線圖
 
-依「先修正正確性 → 再改體驗/效能 → 最後工程化」排序。每項標註影響範圍與大致工作量。
+本 Todo 依下列討論文件重新規劃：
 
-## P0 — 正確性 / 立即痛點
+- `影像品質卡控表與公式_討論版.xlsx`
+- `影像品質數值分級卡控表_v4 (1).md`
 
-- [x] **中文（非 ASCII）路徑讀寫**：已於 `core/image.py` 新增 `imread_unicode` / `imwrite_unicode`
-      （Python 開檔 + `cv2.imdecode` / `cv2.imencode`）。`RawImage.load`、GUI 存 overlay 皆改用之，
-      smoketest 加 `unicode_io` 檢查。
-- [x] **匯出前確認覆寫 / 目錄可寫**：新增 `core/io_utils.validate_save_path`，
-      GUI 匯出 CSV / 存 overlay 前先驗證目錄存在、可寫、非唯讀，錯誤訊息更清楚。
-- [x] **空結果的 CLI 行為**：`cli/batch.py` 先驗證 `--csv` 路徑；全部失敗時明確 `[WARN]`
-      不產生空檔，並在結尾印出 PASS/WARNING/FAIL/讀取失敗 的彙整。
+規劃日期：2026-07-23。
 
-## P1 — 使用體驗
+## 目標與原則
 
-- [x] **分析改用背景執行緒（QThread / worker）**：新增 `gui/worker.py` 的 `AnalysisWorker`，
-      `on_open_image` → `_start_analysis` 於 QThread 跑分析，期間停用按鈕並顯示「分析中」，
-      完成/失敗以 signal 回主執行緒更新。smoketest 加 `gui_worker` 檢查。
-- [x] **視窗縮放時重繪預覽**：`_update_preview` 保留原始 pixmap，覆寫 `resizeEvent` 依當前
-      畫布大小重新等比例 scale。
-- [x] **門檻可在 UI 調整並即時重判**：新增 `gui/threshold_dialog.py`（依 dataclass 欄位動態產生
-      表單）與「門檻設定」按鈕；`pipeline.set_thresholds` 同步判定器，套用後只重跑
-      `AcceptanceJudge` 不重算指標。smoketest 加 `threshold_rejudge`。
-- [x] **批次拖放多張 + 結果表格**：新增 `gui/batch_window.py`（`QTableWidget` + 拖放），
-      可一次分析多張、逐列顯示狀態與關鍵指標、雙擊看報告、一鍵彙整 CSV；主視窗加「批次分析」入口。
+目標是把 AcceptanceChecker 從「單張影像的工程風險分數工具」，逐步升級成可執行《影像品質數值分級卡控表 v4》的 Line Scan AOI 取像驗收工具。
 
-## P2 — 效能
+實作時遵守以下原則：
 
-- [x] **CLI 批次平行化**：`cli/batch.py` 新增 `--jobs N`，`N>1` 時以
-      `ProcessPoolExecutor` 平行分析（回傳純 `Metrics` 避免 pickle 大陣列）；
-      `N<=1` 維持序列並印完整報告。
-- [x] **取樣參數可調**：`max_pixels` 已由 `ImageAnalyzer` / `AcceptancePipeline` 一路貫穿，
-      CLI 新增 `--max-pixels`（平行路徑以 `functools.partial` 傳遞）；預設仍 8M。
-- [x] **重運算快取**：`AcceptancePipeline` 以 (絕對路徑, mtime_ns, 大小) 為鍵的 bounded LRU
-      快取分析結果；同圖重開命中快取，檔案變動或改門檻即失效。smoketest 加 `cache`。
+1. **規範判定與工程分數分離**：v4 的 S0～S3、G1～G6、整體判定是正式驗收語意；既有 `quality_score` / `risk_level` 僅保留為排序、趨勢與相容性資訊，不得覆蓋 S0/S1 結果。
+2. **證據不足不判 PASS**：缺少指定 ROI、原始 bit depth、多張影像、Golden 樣本或必要追溯欄位時，回報 `NOT_EVALUATED` / `INSUFFICIENT_EVIDENCE`，不得用 proxy 自動補成合格。
+3. **原始數據與顯示影像分離**：百分比與卡控值從 L0/L1 原始 bit depth 計算；8-bit 正規化只供預覽、overlay 或明確標示的工程分析。
+4. **核心邏輯不依賴 Qt**：規格、量測、分級、群組合成與報告資料模型放在 `acceptance_checker/core`；GUI、CLI 只負責輸入流程與呈現。
+5. **可重算、可追溯**：每一項分級都必須能追到公式版本、規範版本、輸入檔、ROI、樣本數、影像層級與前提鎖定資料。
+6. **不把內部門檻宣稱為 ISO 門檻**：外部標準只作方法學來源；報告須清楚標示 v4 數值為內部工程管制線。
 
-## P3 — 功能延伸
+## 現況基線與主要缺口
 
-- [x] **手動畫 ROI 的 CNR**：新增 `core/detector.roi_cnr`（缺陷框 vs 外圈 ring 背景）與
-      `gui/roi_label.RoiSelectLabel`（拖曳框選、座標換算回 sample）；主視窗預覽可框選、
-      即時顯示人工 CNR。smoketest 加 `roi_cnr`。
-- [x] **多影像灰階漂移**：新增 `reporting/drift_report.py`（`DriftReporter` 統計平均灰階、均勻性、
-      背景 std、CNR、灰階展開的跨圖分佈；以 `hist_spread_*` 判平均灰階漂移）；批次視窗加「跨圖漂移報告」
-      按鈕、CLI ≥2 張時附印。smoketest 加 `drift`。
-- [x] **門檻設定檔（JSON）**：`Thresholds` 新增 `to_dict/from_dict/save_json/load_json`
-      （未知欄位忽略、缺欄位用預設、非數值報錯）；CLI 加 `--thresholds`、門檻對話框加「載入/另存設定檔」，
-      附預設檔 `thresholds.default.json`。smoketest 加 `thresholds_json`。
+目前已具備：
 
-## P4 — 工程化 / 品質
+- 單張影像載入、中文路徑、8/16-bit 轉換與抽樣。
+- 平均灰階、全圖 STD、5 區均勻性、0/255 clipping、CNR proxy、條紋與 Laplacian 清晰度 proxy。
+- 加權 100 分、PASS/WARNING/FAIL、建議排序、CSV、歷史紀錄、批次漂移報告。
+- GUI、批次 CLI、ROI CNR、JSON 門檻、pytest/Ruff/Mypy/smoketest。
 
-- [x] **加入 `pyproject.toml`**：setuptools 打包、宣告相依與進入點
-      （`acceptance-checker` GUI、`acceptance-checker-cli` CLI）、`dev` optional 相依（pytest/ruff/mypy）；
-      套件加 `__version__`。
-- [x] **單元測試**：新增 `tests/`（pytest）涵蓋 `judge`、`analyzer`、`detector`/`roi_cnr`、
-      `config` JSON（含邊界：全黑、飽和、均勻、單一缺陷、ROI 夾邊界）；`pyproject` 設 `pythonpath`/`testpaths`。共 27 項。
-- [x] **logging 取代 print/traceback**：`cli/batch.py` 的診斷訊息（錯誤/警告）改走 `logging`
-      並加 `--log-level`；報告/CSV/彙整仍為 stdout 輸出。`gui/app.py` 加 module logger 記錄分析失敗。
-- [x] **型別檢查與 lint**：`pyproject` 加 `ruff`（E/F/W/I/B/N）與 `mypy` 設定，全碼 ruff 通過；
-      新增 `.github/workflows/ci.yml` 跑 ruff + mypy + pytest + smoketest（offscreen Qt）。
-- [x] **16-bit 正規化策略**：`RawImage.load` / `_normalize_to_8bit` 加 `normalization`
-      （linear ÷257 或 percentile 百分位拉伸）與 `percentiles`；`Metrics.norm_method` 記錄方式並印於報告；
-      pipeline/CLI（`--normalize`）貫穿。smoketest 加 `normalization`、`tests/test_image.py`。
+與 v4 的關鍵差距：
 
-## P5 — 風險溝通強化（分數用於留痕與提示，而非攔阻）
+- 尚無漫反射明場／鏡面明場／散射暗場三套模式與個別門檻。
+- 尚無 S0～S3、G1～G6 組內最差分級、S0 優先項與第 13.2 節依序整體判定。
+- 現行 16-bit 會先轉 8-bit；不符合 `%FS` 必須依原始 bit depth 計算的要求。
+- 現行 SNR 為單張空間 proxy；v4 時域 SNR 必須由同一像素 N≥30 張計算。
+- 現行均勻性為 5 區；v4 G1 要求固定 16 區，且 ROI 類型必須明確。
+- 缺少 G2、G3、G5 大部分指標、Golden 驗證、必要追溯欄位、waiver 與正式驗收報告。
+- 現行加權分數可能讓單項嚴重缺陷被其他高分抵銷；正式 v4 模式不得如此判定。
 
-背景：實務上影像/批次幾乎一定要放行，`quality_score` / `risk_level` 無法真的擋線，
-功能上應該優先服務「留痕、排優先序、看趨勢」這幾件事，而不是假裝自己是一道關卡。
+## 執行順序
 
-- [x] **建議事項依扣分排序**：`recommendations.py` 新增 `_parse_score_deficits()`，解析
-      `Metrics.score_breakdown`（`AcceptanceJudge.judge()` 已產生的 `"label points/weight；..."`
-      字串）算出每個標籤的 `weight - points` 扣分；`Recommendation` 新增 `labels` 欄位對應
-      `AcceptanceJudge.SCORE_WEIGHTS` 的標籤，`RecommendationBuilder.build()` 內的 `_rank()`
-      依扣分由大到小穩定排序（未先呼叫 `judge()`／無 `score_breakdown` 時，安全退回原始呼叫順序）。
-      不需改 `judge.py` 的簽章，改用解析既有字串而非新增結構化傳遞。
-      測試：`tests/test_recommendations.py`（排序、無 breakdown 時的退回行為）。
+以下 P0～P6 為相依順序。除非前一階段的資料模型與驗收條件已完成，不直接跳做 GUI 表格或單一高階指標。
 
-- [x] **高風險區再分級**：`core/config.Thresholds` 新增 `critical_score`（預設 `30.0`）；
-      `AcceptanceJudge._risk_level()` 在 `overall_status == "FAIL"` 時，依分數是否低於
-      `critical_score` 再分出「量產導入風險極高」（更嚴重）與「量產導入風險高」（原本用字）；
-      `overall_status` 本身（PASS/WARNING/FAIL）不受影響，CLI exit code 與既有測試斷言維持不變。
-      `text_report.py` 的判讀說明依此分兩段文字；`gui/batch_window.py` 新增 `_CRITICAL_COLOR`
-      （深紅）區分表格列顏色；`gui/threshold_dialog.py` 的 `FIELD_LABELS` 加上中文標籤；
-      `thresholds.default.json` 補上欄位。測試：`tests/test_judge.py` 三項新增案例。
+---
 
-- [x] **跨批次/跨時間的分數歷史紀錄**：新增 `reporting/history_log.py` 的 `HistoryLogger`
-      （`append` / `append_many`），每次呼叫皆以附加模式（`"a"` + `utf-8-sig`）寫入使用者指定的
-      CSV，檔案不存在或為空才寫表頭，欄位含時間戳、檔名、`risk_level`、`quality_score`、
-      各關鍵指標、`score_breakdown`、`review_note`。已驗證重複附加不會重複寫入 BOM。
-      CLI 新增 `--history-log PATH`；GUI 批次視窗新增「附加寫入歷史紀錄…」按鈕。
-      影響檔案：`reporting/history_log.py`（新）、`reporting/__init__.py`、`cli/batch.py`、
-      `gui/batch_window.py`。測試：`tests/test_history_log.py`、smoketest `history_log`/`cli`。
+## P0 — v4 判定骨架與原始數據可信度
 
-- [x] **放行簽核 / 覆蓋理由欄位**：`core/metrics.Metrics` 新增 `review_note: str = ""`
-      （隨 `as_dict()` / `asdict()` 自動流入 CSV 與歷史紀錄，無需額外程式碼）。
-      CLI 新增 `--note "文字"`，套用到該次執行所有成功結果；GUI 主視窗與批次視窗都新增一列
-      文字輸入框，匯出 CSV／附加寫入歷史紀錄前套用到當時的結果上（非必填）。
-      影響檔案：`core/metrics.py`、`cli/batch.py`、`gui/app.py`、`gui/batch_window.py`。
+### P0.1 建立 v4 領域模型
 
-- [x] **確認 CLI exit code 的實際用途**：結論是把它明確定位成「預設供人工/半自動流程參考，
-      但呼叫端可自行選擇不當真」：新增 `--no-gate` 旗標，指定後 FAIL 判定不再把 exit code
-      推到 `1`（讀取失敗仍回傳 `2`，因為那是真的錯誤而非品質判定）；未加旗標時行為與先前
-      完全一致。README 的「CLI exit codes」章節已補充旗標說明與使用時機建議。
-      影響檔案：`cli/batch.py`、`README.md`。
+- [ ] 新增不依賴 Qt 的列舉與資料類別：
+  - `OpticalMode`：`DIFFUSE_BRIGHT_FIELD`、`SPECULAR_BRIGHT_FIELD`、`SCATTERING_DARK_FIELD`
+  - `ImageLevel`：`L0`、`L1`、`L2`
+  - `Severity`：`S3`、`S2`、`S1`、`S0`、`NOT_EVALUATED`
+  - `MetricGroup`：`G1`～`G6`
+  - `OverallResult`：驗收通過、有條件通過、驗收不通過、致命失效、證據不足
+- [ ] 新增 `MeasurementResult`，至少保存 metric id、數值、單位、等級、公式版本、ROI、樣本數、影像層級、證據來源與未評估原因。
+- [ ] 新增 `AcceptanceSession` / `AcceptanceManifest`，代表一台機台的一輪驗收，而不是把互不相干的圖片直接當同一批。
+- [ ] 舊 `Metrics` 暫時保留；新增明確 adapter，禁止把舊欄位名稱直接當作 v4 已驗證指標。
+
+驗收條件：
+
+- 領域模型可序列化成 JSON 並無損讀回。
+- 不啟動 Qt 即可建立一輪驗收、加入量測結果並輸出群組狀態。
+- 未提供必要證據時能保留「未評估」狀態，不會自動落入 S3。
+
+### P0.2 將規範門檻改為版本化資料
+
+- [ ] 建立 machine-readable v4 規格檔，逐項定義 metric id、適用模式、單位、S3～S0 邊界、邊界包含規則、必要 ROI/樣本與 S0 特例。
+- [ ] 三種 G1 模式各自存放門檻；G2～G6 使用共通表。
+- [ ] 規格檔包含 `spec_version`、來源文件、核准狀態與生效日期。
+- [ ] 啟動時驗證：無重疊區間、無缺口、引用的 metric id 存在、S0 特例可解析。
+- [ ] 舊 `thresholds.default.json` 標記為 legacy score profile，避免與 v4 規格混用。
+
+驗收條件：
+
+- Excel「01_卡控總表」的 63 個卡控列可逐項對到規格檔。
+- 針對所有邊界值建立參數化測試，驗證 `a < x ≤ b` 與表內例外。
+- 規格不完整或版本不符時拒絕產生正式驗收結論。
+
+### P0.3 保留原始 bit depth 與量測平面
+
+- [ ] `RawImage` 同時保留原始灰階陣列、原始 dtype、bit depth、FS 與獨立的 8-bit preview。
+- [ ] `%FS`、2%FS、86%FS、98%FS 等門檻直接在原始數據上計算。
+- [ ] 不再把 percentile stretch 後影像用於正式驗收；若使用，輸出須標示為 L2/preview。
+- [ ] 抽樣後的面積、座標與連通區結果可回推原圖尺度；不適合抽樣的指標強制使用全解析度 ROI。
+- [ ] 補齊 8/10/12/14/16-bit、float、常數影像、NaN/Inf 與彩色輸入的行為測試。
+
+驗收條件：
+
+- 同一物理灰階比例在 8-bit 與 16-bit 測試圖得到一致 `%FS` 結果。
+- 正式量測結果記錄原始 dtype、bit depth、FS 與是否抽樣。
+- 任何會改變原始灰階關係的處理不會靜默進入 L0/L1 驗收路徑。
+
+### P0.4 實作群組合成與第 13.2 節依序判定
+
+- [ ] 各群組取組內最嚴重的已評估等級。
+- [ ] 依順位 1～7 由上而下判斷，命中第一條即停止。
+- [ ] 實作五項 S0 優先事件，並保留事件證據。
+- [ ] G5/G6 S0、兩組以上 S0、單一 G1～G4 S0、任一 S1 的結果完全依 v4 處理。
+- [ ] `NOT_EVALUATED` 不得被「全部群組 ≥S2」條件吃掉。
+- [ ] 正式結果另用新欄位輸出；legacy `overall_status` / `quality_score` 在遷移期仍可顯示，但不得改寫 v4 結果。
+
+驗收條件：
+
+- 以 decision-table 測試覆蓋第 13.2 節全部順位及同時命中多條規則的案例。
+- S0/S1 不會因其他指標高分而被抵銷。
+- 輸出包含「命中順位、觸發群組、觸發指標、證據不足項目」。
+
+---
+
+## P1 — G1 訊號、動態範圍與 ROI 量測
+
+### P1.1 ROI 與 16 區量測框架
+
+- [ ] 定義 ROI 類型：無缺陷背景、有效檢測區、Golden 缺陷、局部背景 ring、陰影、遮光、拼接接縫與相機等效位置。
+- [ ] ROI 保存原圖座標、建立方式、操作者、版本與適用影像。
+- [ ] 將有效寬度固定切成 16 區；保留逐區平均值與 `U = min / max`。
+- [ ] 支援 GUI 手動畫框、JSON/CSV 匯入與批次套用固定 ROI。
+- [ ] 檢查 ROI 越界、空 ROI、互相重疊與抽樣座標誤差。
+
+### P1.2 三種取像模式的 G1 指標
+
+- [ ] 背景 Mean、空間 STD、CV。
+- [ ] 黑階比例（≤2%FS）、高亮比例（≥86%FS）、過曝比例（≥98%FS）。
+- [ ] 16 區均勻性與左右／分區亮度差。
+- [ ] 局部陰影深度。
+- [ ] 漫反射／鏡面／暗場雜散光佔比；輸入必須包含 reference、blocked、dark 三組證據。
+- [ ] 鏡面熱點：局部背景中位數 +30%FS、8-連通、面積 ≥50 px、外擴 20 px ring。
+- [ ] 暗場缺陷邊緣黑階裁切率：外擴 5 px ring、逐缺陷取最差值、輪廓連續 ≥3 px 中斷直接 S0。
+- [ ] 模式合理性提示：暗場背景長期 >25%FS、鏡面明場接近全黑、缺陷極性不符。
+
+驗收條件：
+
+- 三套模式的每一個 G1 指標都有合成影像測試與邊界測試。
+- ROI 錯誤或缺少 paired evidence 時回報未評估，不使用全圖數值代替。
+- 結果可逐項對照 Excel「02_漫反射明場」至「04_散射暗場」。
+
+---
+
+## P2 — 多影像資料集、時域量測與追溯性
+
+### P2.1 驗收資料集與 Precondition Lock
+
+- [ ] 定義一輪驗收的資料夾/manifest 格式，涵蓋相機、光學、光源、機構、環境、樣品、計算與資料欄位。
+- [ ] 實作第 2 節前提鎖定驗證；任一鎖定參數變更時切成新 session，不混算。
+- [ ] 支援 sidecar JSON/CSV 與檔名規則匯入；無法由影像可靠推得的資訊不得猜測。
+- [ ] 計算 SHA-256，保存來源相對路徑、mtime、影像層級與校正檔版本。
+- [ ] 暖機 <30 分鐘的數據標記無效。
+
+### P2.2 時域雜訊、穩定性與再現性
+
+- [ ] 同一像素 N≥30 張的 `σ_temporal` 與時域 SNR；取代目前單張 spatial proxy 的正式名稱。
+- [ ] 同參數重複性 CV（N≥30）。
+- [ ] 30 分鐘與 8 小時灰階漂移，以暖機完成值為基準。
+- [ ] 重新開機再現性（至少 5 次冷啟動）。
+- [ ] R&R 資料結構與 ANOVA 計算（至少 10 循環，包含重新上下料/定位）。
+- [ ] 環境溫度耐受，要求至少 7 日現場溫度佐證；不足時不得判 S3/S2。
+- [ ] 修正現行 `DriftReporter`：不得再借用 `hist_spread_*` 門檻判灰階漂移。
+
+驗收條件：
+
+- 單張影像不再輸出正式「時域 SNR」。
+- 不足最小樣本數時明確降為未評估或依規範限制最高可達等級。
+- 可用固定 seed 的合成影像序列重現 temporal noise、drift、repeatability 測試結果。
+
+### P2.3 第 11.1 節追溯性完整度
+
+- [ ] 驗證十類必填欄位：timestamp、相機 ID、掃描批次、實際曝光/gain/line rate、光源設定、L1 校正版本、影像層級、樣品/方向、掃描速度/encoder 起點、檔案雜湊。
+- [ ] 必填缺失/不一致判 S1；影像參數無法配對或 timestamp/相機 ID 錯配判 S0。
+- [ ] 選填欄位缺失只提示，不影響 S3。
+- [ ] CSV、JSON 與歷史紀錄輸出都保留 session id、spec version 與 manifest hash。
+
+---
+
+## P3 — G2、G3、G5 工程量測
+
+### P3.1 G2 解析力與掃描幾何
+
+- [ ] Slanted-edge SFR/MTF，分別量測掃描方向與感測器方向的 MTF @ Nyquist/2。
+- [ ] MTF 方向不對稱度。
+- [ ] 最小目標缺陷有效寬度與輪廓清楚度的可重現定義。
+- [ ] 運動模糊／拖影 px。
+- [ ] 縱橫向解析度不對稱與視野尺寸校正誤差。
+- [ ] 固定圖樣 N≥100 次之 encoder 同步位置 P95 絕對誤差。
+- [ ] 對 MTF、標定板與 encoder 證據加入方法版本與品質檢查。
+
+### P3.2 G3 雜訊與感測器
+
+- [ ] 遮光 L0 多張平均的 DSNU。
+- [ ] 均勻照明 L0 的 PRNU，扣除時域噪聲貢獻。
+- [ ] N≥100 多張平均後的縱向 FPN。
+- [ ] 相對 Golden 的空間 STD 增幅。
+- [ ] 壞點／熱點新增數量、位置、有效檢測區判斷與固定遮罩座標。
+- [ ] 將既有 stripe score、robust noise、Laplacian variance 明確標為 diagnostic proxy，未經驗證前不直接對應 v4 等級。
+
+### P3.3 G5 完整性與多相機拼接
+
+- [ ] 影像尺寸、bit depth 與掃描序列完整性檢查。
+- [ ] 漏線／重複線、掉幀／中斷：優先讀取 acquisition log 或 encoder/timestamp 證據；無證據時不得僅靠單張影像宣稱為 0。
+- [ ] 拼接接縫亮度差與位置誤差。
+- [ ] 拼接不可檢區寬度；任一 ≥1 px 直接 S0。
+- [ ] 相機間灰階一致性。
+- [ ] 接縫造成不可檢區時，不受數值門檻影響直接 S0。
+
+驗收條件：
+
+- 每個 G2/G3/G5 指標都有對應 fixture、公式測試、最小樣本數檢查與未評估路徑。
+- 所有 S0 完整性事件均可附上檔名、掃描序號、位置或 log 證據。
+
+---
+
+## P4 — G6 Golden 缺陷檢出力
+
+### P4.1 Golden 樣本與標註資料
+
+- [ ] 建立 Golden catalog：PASS/NG、缺陷型態、尺寸、方向、極性、位置、批次與核准版本。
+- [ ] 保存缺陷 ROI、局部背景 ring 與全寬區域標籤。
+- [ ] Golden 版本變更建立新基準，不覆蓋舊報告所引用的版本。
+- [ ] 支援實際 detector 分數/判定匯入，不把 AcceptanceChecker 的自動候選 proxy 當正式檢出器。
+
+### P4.2 G6 指標與統計
+
+- [ ] 缺陷 CNR；亮/暗兩種極性分別量測並取較差者。
+- [ ] Golden NG 檢出率、最差 margin、重拍次數與穩定漏檢。
+- [ ] 每型態 NG 樣本數與缺陷型態涵蓋率。
+- [ ] Golden PASS 誤檢率，要求 PASS N≥200 才可判 S3/S2。
+- [ ] 95% 單側 Clopper–Pearson 誤檢率上界。
+- [ ] 中心、兩側、拼接區的全寬檢出一致性。
+- [ ] 任一穩定漏檢、最小缺陷不可辨識或有效寬度 <2 px 觸發 S0 優先事件。
+
+驗收條件：
+
+- 樣本數不足、型態未涵蓋與重拍可通過均依 v4 正確分級。
+- 每個比率同時輸出分子、分母、信賴區間與 Golden 版本。
+- 自動 CNR 與人工 ROI CNR 可保留為工程提示，但正式 G6 結果只能引用核准 Golden 證據。
+
+---
+
+## P5 — 責任歸屬、waiver、正式報告與操作流程
+
+### P5.1 責任歸屬與 S2 關聯性
+
+- [ ] 依 G1～G6 結果產生主責單位與建議改善順序。
+- [ ] G1～G5 任一 S1/S0 時，報告明示 L2 不得作為通過對策。
+- [ ] 實作第 14.1 節 S2 與 G6 的關聯矩陣，但結果只作「推定/待確認」，不可自動取代三方確認與實驗證據。
+- [ ] 支援技術異議、三方意見與附錄 B 診斷實驗附件。
+- [ ] 新增 log-log 單一變因分析：至少 5 亮度點、每點 N≥30、分開 spatial STD 與 temporal noise，輸出迴歸圖與指數 b。
+
+### P5.2 Waiver 工作流
+
+- [ ] 建立 waiver 資料模型與必要欄位、核准層級、責任人、硬體改善日與原判定。
+- [ ] 有效期限不得超過 90 日；到期自動失效並回復原判定。
+- [ ] 同一指標最多展延兩次，後續核准提高一階；第三次要求替代方案。
+- [ ] waiver 期間新增 S0 時立即失效。
+- [ ] 每 30 日追蹤進度、漏誤檢實績、最新指標與新增 S1/S0。
+- [ ] waiver 永遠不把原結果改寫成「驗收通過」。
+
+### P5.3 《取像品質驗收報告》
+
+- [ ] 建立結構化報告模型，涵蓋第 16.1 節九章內容。
+- [ ] 輸出 HTML/PDF 與 machine-readable JSON；CSV 只作明細，不作唯一正式報告。
+- [ ] 報告逐項列出實測值、S 等級、群組、公式、ROI、日期、證據、規範版本與判定順位。
+- [ ] 附原始影像/參數/腳本/雜湊清單，確保每項分級可重算。
+- [ ] 支援取像主責、軟體、品質三方會簽與並列不同意見。
+- [ ] 清楚標示「內部工程管制線」，不宣稱為 ISO 強制門檻。
+
+### P5.4 GUI 與 CLI 遷移
+
+- [ ] GUI 改為 session workflow：建立/載入 manifest → 選模式 → 檢查證據 → 執行量測 → 檢閱未評估項 → 產生報告。
+- [ ] 新增群組總覽、S0 優先事件、判定順位、證據缺口與來源追蹤頁。
+- [ ] CLI 新增 `validate-manifest`、`measure`、`judge`、`report` 等可組合子命令。
+- [ ] `--no-gate` 只影響外部程序 exit code，不改正式 v4 結果與報告文字。
+- [ ] 舊單張分析入口保留為「快速工程檢查」，UI/CLI 明確標示不是完整 v4 驗收。
+
+---
+
+## P6 — 驗證、移轉與發布
+
+### P6.1 測試策略
+
+- [ ] 為每個 metric 建立公式單元測試、邊界參數化測試、缺證據測試與 S0 特例測試。
+- [ ] 建立 synthetic dataset：三種取像模式、各 bit depth、時域噪聲、漂移、熱點、陰影、拼接、掉線與 Golden 漏誤檢。
+- [ ] 建立去識別化的核准 Golden regression dataset；大型資料不直接提交 Git，改用 manifest + hash 管理。
+- [ ] 對 Excel 每一列建立 traceability test，確認規格檔沒有漏項或錯配。
+- [ ] 報告 snapshot 測試與 JSON schema 相容性測試。
+- [ ] 針對超大 Line Scan 圖與多張序列做效能/記憶體基準。
+
+### P6.2 相容性與資料移轉
+
+- [ ] 提供 legacy threshold、CSV、history log 的讀取/轉換工具。
+- [ ] 舊資料缺少 v4 必填證據時，轉換結果標示「僅供工程參考」，不補造正式等級。
+- [ ] 文件說明 `quality_score`、legacy `overall_status` 與 v4 `OverallResult` 的差異。
+- [ ] 在至少一個版本內保留舊 API deprecation warning，再決定移除時程。
+
+### P6.3 發布完成條件
+
+- [ ] 完整驗證腳本通過：compile、Ruff、Mypy、pytest、offscreen smoketest。
+- [ ] README、CLI help、GUI 說明、預設 spec、manifest 範例與驗收報告範例一致。
+- [ ] 規範版本、套件版本與報告 schema 版本可獨立追蹤。
+- [ ] 以一套完整示範資料走完：manifest 驗證 → G1～G6 → 第 13.2 判定 → 報告 → waiver（若需要）。
+- [ ] 由光學/取像、軟體與品質三方審閱計算公式、證據要求與報告內容後才標示為正式 v4 支援。
+
+---
+
+## 建議的第一個可交付版本（v4-MVP）
+
+第一個里程碑先完成 P0、P1 與 P2.3，交付範圍限定為：
+
+- 原始 bit depth 的 G1 三模式量測。
+- S0～S3 與第 13.2 節判定引擎。
+- ROI、16 區、追溯性 manifest 與證據不足狀態。
+- 結構化 JSON/CSV 結果。
+- 舊單張分數工具保留為 legacy quick check。
+
+此版本**不宣稱完成完整 v4 驗收**，因為 G2～G6、多時點穩定性、Golden 統計與正式報告仍待後續里程碑完成。
+
+## 暫不做／不得混用
+
+- 不用 Laplacian variance 直接取代 MTF。
+- 不用單張全圖 STD 直接取代時域雜訊或時域 SNR。
+- 不用自動候選缺陷 CNR 直接取代 Golden G6 驗證。
+- 不用 5 區均勻性冒充規範要求的 16 區結果。
+- 不用 percentile stretch 後的 8-bit 數值判 `%FS`。
+- 不從單張靜態影像猜測掉幀、encoder 同步、曝光實際值或相機 ID。
+- 不因 legacy 加權總分高而忽略 S0/S1。
+- 不在證據不足時輸出「驗收通過」。
