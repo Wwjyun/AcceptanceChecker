@@ -344,6 +344,19 @@ all user-facing labels identify it as a spatial SNR proxy. `DriftReporter` now u
 relative drift from the first image with dedicated drift thresholds and no longer
 borrows histogram-spread thresholds.
 
+## v4 traceability validation
+
+`TraceabilityValidator` checks every image for the ten §11.1 required categories:
+millisecond timestamp, camera identity, scan batch/sequence, actual exposure/gain/line
+rate, actual light setting, L1 calibration and image level, sample and orientation,
+scan speed and encoder origin, and file SHA-256. Missing or inconsistent required data
+is S1. Camera mismatch, conflicting sequence/timestamp pairing, or a sidecar declaring
+another source image is S0. Optional environment/operator fields produce warnings only.
+
+The G5 traceability result carries `session_id`, `spec_version`, and `manifest_hash`.
+Those keys are also preserved by session JSON, legacy-compatible CSV export, and the
+append-only history log.
+
 ## Validation
 
 Run the core test suite:

@@ -17,6 +17,9 @@ class Metrics:
     full_scale: int = 0
     norm_method: str = ""
     analysis_step: int = 1
+    session_id: str = ""
+    spec_version: str = ""
+    manifest_hash: str = ""
 
     mean_gray: float = 0.0
     std_gray: float = 0.0

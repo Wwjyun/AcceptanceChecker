@@ -20,6 +20,9 @@ from ..core.metrics import Metrics
 
 FIELDNAMES = [
     "timestamp",
+    "session_id",
+    "spec_version",
+    "manifest_hash",
     "file_name",
     "file_path",
     "risk_level",
@@ -58,6 +61,9 @@ class HistoryLogger:
                 writer.writerow(
                     {
                         "timestamp": now,
+                        "session_id": m.session_id,
+                        "spec_version": m.spec_version,
+                        "manifest_hash": m.manifest_hash,
                         "file_name": m.file_name,
                         "file_path": m.file_path,
                         "risk_level": m.risk_level,

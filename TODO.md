@@ -167,10 +167,10 @@
 
 ### P2.3 第 11.1 節追溯性完整度
 
-- [ ] 驗證十類必填欄位：timestamp、相機 ID、掃描批次、實際曝光/gain/line rate、光源設定、L1 校正版本、影像層級、樣品/方向、掃描速度/encoder 起點、檔案雜湊。
-- [ ] 必填缺失/不一致判 S1；影像參數無法配對或 timestamp/相機 ID 錯配判 S0。
-- [ ] 選填欄位缺失只提示，不影響 S3。
-- [ ] CSV、JSON 與歷史紀錄輸出都保留 session id、spec version 與 manifest hash。
+- [x] 驗證十類必填欄位：timestamp、相機 ID、掃描批次、實際曝光/gain/line rate、光源設定、L1 校正版本、影像層級、樣品/方向、掃描速度/encoder 起點、檔案雜湊。
+- [x] 必填缺失/不一致判 S1；影像參數無法配對或 timestamp/相機 ID 錯配判 S0。
+- [x] 選填欄位缺失只提示，不影響 S3。
+- [x] CSV、JSON 與歷史紀錄輸出都保留 session id、spec version 與 manifest hash。
 
 ---
 

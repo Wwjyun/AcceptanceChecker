@@ -82,6 +82,7 @@ class AcceptanceManifest:
     created_at: str = field(default_factory=_utc_now_iso)
     precondition_lock: Any = field(default_factory=dict)
     metadata: Dict[str, Any] = field(default_factory=dict)
+    manifest_hash: str = ""
 
     def __post_init__(self) -> None:
         if not self.machine_id.strip():
@@ -105,6 +106,7 @@ class AcceptanceManifest:
                 else dict(self.precondition_lock)
             ),
             "metadata": dict(self.metadata),
+            "manifest_hash": self.manifest_hash,
         }
 
     @classmethod
@@ -134,6 +136,7 @@ class AcceptanceManifest:
             created_at=str(data["created_at"]),
             precondition_lock=lock,
             metadata=dict(data.get("metadata", {})),
+            manifest_hash=str(data.get("manifest_hash", "")),
         )
 
 

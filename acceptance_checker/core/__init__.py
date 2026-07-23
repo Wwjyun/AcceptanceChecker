@@ -59,6 +59,7 @@ from .temporal_analysis import (
     TemporalMeasurementReport,
     TemporalSeries,
 )
+from .traceability import TraceabilityReport, TraceabilityValidator
 from .v4_domain import (
     AcceptanceManifest,
     AcceptanceSession,
@@ -131,6 +132,8 @@ __all__ = [
     "TemporalMeasurementInputs",
     "TemporalMeasurementReport",
     "TemporalSeries",
+    "TraceabilityReport",
+    "TraceabilityValidator",
     "AcceptanceManifest",
     "AcceptanceSession",
     "ImageLevel",
