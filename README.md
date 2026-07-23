@@ -390,6 +390,23 @@ effective inspection area are reported as not evaluated instead of inferred.
 Legacy robust-noise, stripe-score, and Laplacian-variance values remain
 diagnostic proxies and do not directly determine a v4 grade.
 
+## v4 G5 integrity and stitching measurements
+
+`G5Measurer` produces all eight G5 metrics from versioned contracts, acquisition
+evidence, seam targets, equivalent camera ROIs, and the dataset manifest. Image
+dimensions and bit depth are checked per source file, while scan sequence
+collisions retain both source names. Missing or duplicate lines and dropped,
+duplicated, or interrupted frames are derived only from an acquisition log or
+encoder/timestamp identifiers; an absent log is never interpreted as zero.
+
+For multi-camera systems, the measurer reports symmetric seam brightness
+difference, worst matched-feature position residual, maximum uncovered width,
+and the worst equivalent-ROI gray difference. Any seam blind zone of at least
+one pixel is S0 and also forces the seam-brightness result to S0 regardless of
+its numeric value. A versioned single-camera architecture declaration supplies
+an explicit not-applicable result instead of silently skipping stitch checks.
+The existing `TraceabilityValidator` supplies the eighth G5 result.
+
 ## Validation
 
 Run the core test suite:

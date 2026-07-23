@@ -40,6 +40,17 @@ from .g3_measurement import (
     G3Measurer,
     SensorFrameSeries,
 )
+from .g5_measurement import (
+    AcquisitionIntegrityEvidence,
+    G5MeasurementError,
+    G5MeasurementInputs,
+    G5MeasurementReport,
+    G5Measurer,
+    ImageContract,
+    ImageObservation,
+    InterCameraGrayEvidence,
+    StitchEvidence,
+)
 from .image import MeasurementPlaneError, RawImage
 from .judge import AcceptanceJudge
 from .legacy_adapter import LegacyMetricsAdapter, legacy_metrics_to_measurements
@@ -127,6 +138,15 @@ __all__ = [
     "G3MeasurementReport",
     "G3Measurer",
     "SensorFrameSeries",
+    "AcquisitionIntegrityEvidence",
+    "G5MeasurementError",
+    "G5MeasurementInputs",
+    "G5MeasurementReport",
+    "G5Measurer",
+    "ImageContract",
+    "ImageObservation",
+    "InterCameraGrayEvidence",
+    "StitchEvidence",
     "RawImage",
     "MeasurementPlaneError",
     "AcceptanceJudge",
