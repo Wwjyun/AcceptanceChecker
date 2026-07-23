@@ -1,0 +1,49 @@
+{
+  "top_level_keys": [
+    "created_at",
+    "disclaimer",
+    "dissenting_opinions",
+    "formula_version",
+    "manifest_hash",
+    "measurement_date",
+    "report_id",
+    "report_schema_version",
+    "sections",
+    "session_id",
+    "signoffs",
+    "specification_version"
+  ],
+  "section_titles": [
+    "受驗標的",
+    "取像模式宣告",
+    "量測前提鎖定表",
+    "各群組實測值與分級",
+    "整體判定",
+    "成因診斷",
+    "責任歸屬",
+    "改善建議與優先序",
+    "原始資料"
+  ],
+  "measurement_keys": [
+    "evidence_sources",
+    "formula",
+    "formula_version",
+    "group",
+    "image_level",
+    "measurement_date",
+    "metric_id",
+    "missing_reason",
+    "roi_id",
+    "sample_count",
+    "severity",
+    "unit",
+    "value"
+  ],
+  "signoff_keys": [
+    "decision",
+    "dissent",
+    "party",
+    "representative",
+    "signed_at"
+  ]
+}

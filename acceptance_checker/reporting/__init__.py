@@ -20,6 +20,7 @@ from .report_factory import (
     load_report_config,
     report_config_template,
 )
+from .schema import load_formal_report_schema_v1
 from .text_report import ReportBuilder
 
 __all__ = [
@@ -42,4 +43,5 @@ __all__ = [
     "export_formal_report",
     "load_report_config",
     "report_config_template",
+    "load_formal_report_schema_v1",
 ]

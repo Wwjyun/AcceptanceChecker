@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "seed": 20260723,
+  "purpose": "Deterministic v4 formula, evidence-gap, and S0 regression scenarios",
+  "optical_modes": [
+    "diffuse_bright_field",
+    "specular_bright_field",
+    "scattering_dark_field"
+  ],
+  "bit_depths": [8, 10, 12, 14, 16],
+  "scenarios": [
+    "mode_and_bit_depth_scaling",
+    "temporal_noise",
+    "gray_drift_30min_and_8h",
+    "specular_hotspot",
+    "local_shadow",
+    "stitch_blind_zone",
+    "missing_and_duplicate_line",
+    "dropped_frame_and_interruption",
+    "golden_stable_miss"
+  ]
+}

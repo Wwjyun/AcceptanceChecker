@@ -516,6 +516,29 @@ a detail export only. Every formal report carries the immutable statement that
 its thresholds are internal engineering control limits, not ISO-mandated
 acceptance thresholds.
 
+### v4 verification assets
+
+- `tests/data/excel_control_rows.json` is a read-only extraction of workbook sheet
+  `01_卡控總表!A6:H68`, including the source workbook SHA-256. A traceability test compares all
+  63 row names, groups, modes, and S3–S0 display bands to the packaged spec.
+- `tests/data/synthetic_scenarios.json` declares deterministic coverage for all three optical
+  modes, 8/10/12/14/16-bit inputs, temporal noise and drift, hotspot, shadow, stitching,
+  acquisition loss, and Golden miss paths.
+- `tests/data/golden_regression_manifest.json` stores only the deidentified automated-regression
+  manifest and hashes; its 30 NG / 200 PASS generated catalog and detector-result payloads are
+  not committed as large artifacts and are recreated deterministically in tests.
+- `acceptance_checker/schemas/formal_report_v1.schema.json` is the JSON Schema contract for
+  formal report schema `1.0`; snapshot and Draft 2020-12 validation tests protect compatibility.
+
+Run the default large Line Scan / 30-frame temporal benchmark:
+
+```bash
+python benchmarks/benchmark_line_scan.py
+```
+
+The benchmark reports shapes, input bytes, elapsed time, Python-tracked peak memory,
+16-zone uniformity, and temporal SNR. Dimensions are configurable from the command line.
+
 ## Validation
 
 Run the core test suite:

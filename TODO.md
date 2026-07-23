@@ -280,12 +280,12 @@
 
 ### P6.1 測試策略
 
-- [ ] 為每個 metric 建立公式單元測試、邊界參數化測試、缺證據測試與 S0 特例測試。
-- [ ] 建立 synthetic dataset：三種取像模式、各 bit depth、時域噪聲、漂移、熱點、陰影、拼接、掉線與 Golden 漏誤檢。
-- [ ] 建立去識別化的核准 Golden regression dataset；大型資料不直接提交 Git，改用 manifest + hash 管理。
-- [ ] 對 Excel 每一列建立 traceability test，確認規格檔沒有漏項或錯配。
-- [ ] 報告 snapshot 測試與 JSON schema 相容性測試。
-- [ ] 針對超大 Line Scan 圖與多張序列做效能/記憶體基準。
+- [x] 為每個 metric 建立公式單元測試、邊界參數化測試、缺證據測試與 S0 特例測試。
+- [x] 建立 synthetic dataset：三種取像模式、各 bit depth、時域噪聲、漂移、熱點、陰影、拼接、掉線與 Golden 漏誤檢。
+- [x] 建立去識別化的核准 Golden regression dataset；大型資料不直接提交 Git，改用 manifest + hash 管理。
+- [x] 對 Excel 每一列建立 traceability test，確認規格檔沒有漏項或錯配。
+- [x] 報告 snapshot 測試與 JSON schema 相容性測試。
+- [x] 針對超大 Line Scan 圖與多張序列做效能/記憶體基準。
 
 ### P6.2 相容性與資料移轉
 

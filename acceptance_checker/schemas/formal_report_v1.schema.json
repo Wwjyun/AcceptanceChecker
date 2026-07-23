@@ -1,0 +1,198 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://acceptance-checker.local/schemas/formal-report-v1.json",
+  "title": "AcceptanceChecker Formal Acceptance Report v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "report_schema_version",
+    "report_id",
+    "created_at",
+    "measurement_date",
+    "specification_version",
+    "formula_version",
+    "session_id",
+    "manifest_hash",
+    "disclaimer",
+    "sections",
+    "signoffs",
+    "dissenting_opinions"
+  ],
+  "properties": {
+    "report_schema_version": {"const": "1.0"},
+    "report_id": {"type": "string", "minLength": 1},
+    "created_at": {"type": "string", "format": "date-time"},
+    "measurement_date": {"type": "string", "format": "date-time"},
+    "specification_version": {"type": "string", "minLength": 1},
+    "formula_version": {"type": "string", "minLength": 1},
+    "session_id": {"type": "string", "minLength": 1},
+    "manifest_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "disclaimer": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sections": {
+      "type": "array",
+      "minItems": 9,
+      "maxItems": 9,
+      "prefixItems": [
+        {"$ref": "#/$defs/section1"},
+        {"$ref": "#/$defs/section2"},
+        {"$ref": "#/$defs/section3"},
+        {"$ref": "#/$defs/section4"},
+        {"$ref": "#/$defs/section5"},
+        {"$ref": "#/$defs/section6"},
+        {"$ref": "#/$defs/section7"},
+        {"$ref": "#/$defs/section8"},
+        {"$ref": "#/$defs/section9"}
+      ],
+      "items": false
+    },
+    "signoffs": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {"$ref": "#/$defs/signoff"}
+    },
+    "dissenting_opinions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["party", "representative", "opinion"],
+        "properties": {
+          "party": {"enum": ["imaging_system", "software", "quality"]},
+          "representative": {"type": "string", "minLength": 1},
+          "opinion": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sectionBase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["number", "title", "content"],
+      "properties": {
+        "number": {"type": "integer"},
+        "title": {"type": "string", "minLength": 1},
+        "content": {}
+      }
+    },
+    "section1": {
+      "allOf": [
+        {"$ref": "#/$defs/sectionBase"},
+        {"properties": {"number": {"const": 1}, "title": {"const": "受驗標的"}}}
+      ]
+    },
+    "section2": {
+      "allOf": [
+        {"$ref": "#/$defs/sectionBase"},
+        {"properties": {"number": {"const": 2}, "title": {"const": "取像模式宣告"}}}
+      ]
+    },
+    "section3": {
+      "allOf": [
+        {"$ref": "#/$defs/sectionBase"},
+        {"properties": {"number": {"const": 3}, "title": {"const": "量測前提鎖定表"}}}
+      ]
+    },
+    "section4": {
+      "allOf": [
+        {"$ref": "#/$defs/sectionBase"},
+        {
+          "properties": {
+            "number": {"const": 4},
+            "title": {"const": "各群組實測值與分級"},
+            "content": {
+              "type": "array",
+              "items": {"$ref": "#/$defs/measurement"}
+            }
+          }
+        }
+      ]
+    },
+    "section5": {
+      "allOf": [
+        {"$ref": "#/$defs/sectionBase"},
+        {"properties": {"number": {"const": 5}, "title": {"const": "整體判定"}}}
+      ]
+    },
+    "section6": {
+      "allOf": [
+        {"$ref": "#/$defs/sectionBase"},
+        {"properties": {"number": {"const": 6}, "title": {"const": "成因診斷"}}}
+      ]
+    },
+    "section7": {
+      "allOf": [
+        {"$ref": "#/$defs/sectionBase"},
+        {"properties": {"number": {"const": 7}, "title": {"const": "責任歸屬"}}}
+      ]
+    },
+    "section8": {
+      "allOf": [
+        {"$ref": "#/$defs/sectionBase"},
+        {"properties": {"number": {"const": 8}, "title": {"const": "改善建議與優先序"}}}
+      ]
+    },
+    "section9": {
+      "allOf": [
+        {"$ref": "#/$defs/sectionBase"},
+        {"properties": {"number": {"const": 9}, "title": {"const": "原始資料"}}}
+      ]
+    },
+    "measurement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "metric_id",
+        "group",
+        "value",
+        "unit",
+        "severity",
+        "formula",
+        "formula_version",
+        "roi_id",
+        "measurement_date",
+        "image_level",
+        "sample_count",
+        "evidence_sources",
+        "missing_reason"
+      ],
+      "properties": {
+        "metric_id": {"type": "string", "minLength": 1},
+        "group": {"enum": ["G1", "G2", "G3", "G4", "G5", "G6"]},
+        "value": {},
+        "unit": {"type": "string"},
+        "severity": {"enum": ["S3", "S2", "S1", "S0", "NOT_EVALUATED"]},
+        "formula": {"type": "string", "minLength": 1},
+        "formula_version": {"type": "string", "minLength": 1},
+        "roi_id": {"type": "string"},
+        "measurement_date": {"type": "string", "format": "date-time"},
+        "image_level": {"enum": ["L0", "L1", "L2"]},
+        "sample_count": {"type": "integer", "minimum": 0},
+        "evidence_sources": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        },
+        "missing_reason": {"type": "string"}
+      }
+    },
+    "signoff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["party", "representative", "decision", "signed_at", "dissent"],
+      "properties": {
+        "party": {"enum": ["imaging_system", "software", "quality"]},
+        "representative": {"type": "string", "minLength": 1},
+        "decision": {"type": "string", "minLength": 1},
+        "signed_at": {"type": "string", "format": "date-time"},
+        "dissent": {"type": "string"}
+      }
+    }
+  }
+}

@@ -6,7 +6,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 import cv2
 import numpy as np
@@ -29,6 +29,30 @@ class MissingG1EvidenceError(ValueError):
     """某一 G1 公式缺少必要且可驗證的輸入。"""
 
 
+_QUALITATIVE_S0_METRICS = {
+    "g1.diffuse.low_clip_pct",
+    "g1.diffuse.overexposure_pct",
+    "g1.diffuse.local_shadow_depth_pct",
+    "g1.specular.overexposure_pct",
+    "g1.specular.local_shadow_depth_pct",
+}
+
+
+@dataclass(frozen=True)
+class G1S0OverrideEvidence:
+    """Reviewed evidence for a qualitative G1 defect-obscuration S0 rule."""
+
+    metric_id: str
+    description: str
+    evidence_source: str
+
+    def __post_init__(self) -> None:
+        if self.metric_id not in _QUALITATIVE_S0_METRICS:
+            raise ValueError(f"{self.metric_id} 不支援 G1 質性 S0 override")
+        if not self.description.strip() or not self.evidence_source.strip():
+            raise ValueError("G1 S0 override 必須提供說明與 evidence source")
+
+
 @dataclass
 class G1MeasurementInputs:
     """一輪 G1 量測的輸入與證據來源。"""
@@ -46,6 +70,7 @@ class G1MeasurementInputs:
     blocked_source: str = ""
     dark_source: str = ""
     expected_defect_polarity: DefectPolarity = DefectPolarity.UNSPECIFIED
+    s0_overrides: Sequence[G1S0OverrideEvidence] = field(default_factory=tuple)
 
     def __post_init__(self) -> None:
         if not self.evidence_source.strip():
@@ -99,6 +124,24 @@ class G1Measurer:
                 continue
             try:
                 computed = self._compute(metric, inputs, rois)
+                override = next(
+                    (
+                        item
+                        for item in inputs.s0_overrides
+                        if item.metric_id == metric.metric_id
+                    ),
+                    None,
+                )
+                if override is not None:
+                    computed.forced_severity = Severity.S0
+                    computed.evidence_sources.append(override.evidence_source)
+                    computed.metadata.update(
+                        {
+                            "qualitative_s0_override": True,
+                            "qualitative_s0_description": override.description,
+                            "qualitative_s0_evidence": override.evidence_source,
+                        }
+                    )
                 report.measurements.append(self._evaluated_result(metric, inputs, computed))
             except (MissingG1EvidenceError, MeasurementPlaneError, RoiError) as exc:
                 report.measurements.append(self._missing_result(metric, inputs, str(exc)))
@@ -112,6 +155,19 @@ class G1Measurer:
             ),
             None,
         )
+        priority_results = [
+            item
+            for item in report.measurements
+            if item.metadata.get("qualitative_s0_override", False)
+        ]
+        for item in priority_results:
+            report.priority_events.append(
+                S0PriorityEvent(
+                    event_type=S0PriorityEventType.DEFECT_SIGNAL_OBSCURED,
+                    description=str(item.metadata["qualitative_s0_description"]),
+                    evidence_sources=[str(item.metadata["qualitative_s0_evidence"])],
+                )
+            )
         if edge_result is not None and edge_result.metadata.get("contour_interruption", False):
             report.priority_events.append(
                 S0PriorityEvent(
@@ -437,6 +493,10 @@ class G1Measurer:
         metadata = {
             "requirement_profile": metric.requirement_profile,
             "classification_kind": kind,
+            "raw_dtype": inputs.raw.original_dtype,
+            "bit_depth": inputs.raw.bit_depth,
+            "full_scale": inputs.raw.require_full_scale(),
+            "sampled": False,
             **computed.metadata,
         }
         missing_reason = ""
@@ -483,6 +543,10 @@ class G1Measurer:
             metadata={
                 "requirement_profile": metric.requirement_profile,
                 "classification_kind": metric.classification["kind"],
+                "raw_dtype": inputs.raw.original_dtype,
+                "bit_depth": inputs.raw.bit_depth,
+                "full_scale": inputs.raw.full_scale,
+                "sampled": False,
             },
         )
 

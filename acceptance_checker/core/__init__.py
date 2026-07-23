@@ -23,6 +23,7 @@ from .g1_measurement import (
     G1MeasurementInputs,
     G1MeasurementReport,
     G1Measurer,
+    G1S0OverrideEvidence,
     MissingG1EvidenceError,
 )
 from .g2_measurement import (
@@ -179,6 +180,7 @@ __all__ = [
     "G1MeasurementInputs",
     "G1MeasurementReport",
     "G1Measurer",
+    "G1S0OverrideEvidence",
     "MissingG1EvidenceError",
     "G2MeasurementError",
     "G2MeasurementInputs",

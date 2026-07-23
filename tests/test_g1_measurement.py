@@ -12,6 +12,7 @@ from acceptance_checker import (
     DefectPolarity,
     G1MeasurementInputs,
     G1Measurer,
+    G1S0OverrideEvidence,
     ImageLevel,
     MetricGroup,
     OpticalMode,
@@ -232,6 +233,54 @@ def test_dark_edge_contiguous_low_clip_forces_s0_priority_event():
     assert edge.metadata["ring_pad_px"] == 5
     assert len(report.priority_events) == 1
     assert report.priority_events[0].event_type.value == "defect_signal_obscured"
+
+
+@pytest.mark.parametrize(
+    "mode, metric_id",
+    [
+        (OpticalMode.DIFFUSE_BRIGHT_FIELD, "g1.diffuse.low_clip_pct"),
+        (OpticalMode.DIFFUSE_BRIGHT_FIELD, "g1.diffuse.overexposure_pct"),
+        (OpticalMode.DIFFUSE_BRIGHT_FIELD, "g1.diffuse.local_shadow_depth_pct"),
+        (OpticalMode.SPECULAR_BRIGHT_FIELD, "g1.specular.overexposure_pct"),
+        (OpticalMode.SPECULAR_BRIGHT_FIELD, "g1.specular.local_shadow_depth_pct"),
+    ],
+)
+def test_reviewed_qualitative_obscuration_evidence_forces_s0(mode, metric_id):
+    inputs = inputs_for(mode)
+    inputs.s0_overrides = [
+        G1S0OverrideEvidence(
+            metric_id,
+            "三方檢閱確認訊號被背景黑階／飽和／陰影遮蔽",
+            "obscuration-review.json",
+        )
+    ]
+
+    report = G1Measurer().measure(inputs)
+    result = by_id(report, metric_id)
+
+    assert result.severity == Severity.S0
+    assert result.metadata["qualitative_s0_override"] is True
+    assert "obscuration-review.json" in result.evidence_sources
+    assert any(
+        event.event_type.value == "defect_signal_obscured"
+        and event.evidence_sources == ["obscuration-review.json"]
+        for event in report.priority_events
+    )
+
+
+def test_g1_s0_override_rejects_non_qualitative_metric_and_missing_evidence():
+    with pytest.raises(ValueError, match="不支援"):
+        G1S0OverrideEvidence(
+            "g1.diffuse.background_mean_pct_fs",
+            "manual override",
+            "review.json",
+        )
+    with pytest.raises(ValueError, match="說明"):
+        G1S0OverrideEvidence(
+            "g1.diffuse.low_clip_pct",
+            "",
+            "review.json",
+        )
 
 
 def test_dark_background_undefined_two_to_three_percent_is_not_evaluated():

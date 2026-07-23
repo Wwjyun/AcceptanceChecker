@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "dataset_id": "deidentified-golden-regression-line-a",
+  "dataset_version": "2.0",
+  "classification": "synthetic_deidentified_test_fixture",
+  "production_use_allowed": false,
+  "approval_scope": "automated regression only; not a production Golden approval",
+  "approval_record_source": "approval.pdf",
+  "required_defect_types": ["scratch"],
+  "sample_counts": {
+    "NG": 30,
+    "PASS": 200
+  },
+  "storage": {
+    "catalog": "external://acceptance-checker-regression/line-a/2.0/catalog.json",
+    "catalog_sha256": "b4d50adbd7db764e4fdd09a45d4e0f70f82811c8043422fc544cbacd0967afba",
+    "detector_results": "external://acceptance-checker-regression/line-a/2.0/detector-results.json",
+    "detector_results_sha256": "65e636ebc9515295b7f777390294e96e7fc67a28b726b56035e203932a405034"
+  },
+  "expected": {
+    "stable_misses": 0,
+    "false_positives": 0,
+    "minimum_ng_per_type": 30,
+    "defect_type_coverage_pct": 100.0
+  }
+}

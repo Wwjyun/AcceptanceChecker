@@ -7,6 +7,7 @@ import copy
 import json
 import math
 from importlib import resources
+from pathlib import Path
 
 import pytest
 
@@ -46,6 +47,41 @@ def test_default_spec_has_all_63_excel_rows():
     assert spec.status == "draft_unapproved"
     assert spec.effective_date is None
     assert len(spec.source_documents) == 2
+
+
+def test_every_excel_control_row_maps_to_the_same_spec_row_and_bands():
+    """Lock the machine-readable spec to the reviewed 01_卡控總表 source range."""
+    fixture_path = Path(__file__).parent / "data" / "excel_control_rows.json"
+    fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
+    spec = load_default_v4_spec()
+
+    assert fixture["source_file"] == "影像品質卡控表與公式_討論版.xlsx"
+    assert fixture["source_sha256"] == (
+        "8f9b6e4ce6e36ca21780078ad65b5f37c612e594b5b6b2db1b58bc72ab6ed321"
+    )
+    assert fixture["source_sheet"] == "01_卡控總表"
+    assert fixture["source_range"] == "A6:H68"
+    assert len(fixture["rows"]) == len(spec.metrics) == 63
+
+    for row_number, (row, metric) in enumerate(
+        zip(fixture["rows"], spec.metrics), start=6
+    ):
+        assert row[0].startswith(metric.group.value), (
+            f"Excel row {row_number} group differs from {metric.metric_id}"
+        )
+        assert row[2] == metric.name, (
+            f"Excel row {row_number} name differs from {metric.metric_id}"
+        )
+        assert row[3:7] == [
+            metric.display_bands[severity] for severity in ("S3", "S2", "S1", "S0")
+        ], f"Excel row {row_number} bands differ from {metric.metric_id}"
+        expected_modes = {
+            "漫反射明場": {"diffuse_bright_field"},
+            "鏡面明場": {"specular_bright_field"},
+            "散射暗場": {"scattering_dark_field"},
+            "共通": {"all"},
+        }[row[1]]
+        assert set(metric.modes) == expected_modes
 
 
 def test_every_metric_has_traceability_fields():
