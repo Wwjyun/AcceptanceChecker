@@ -210,7 +210,11 @@ class AcceptanceSession:
         若已評估項只有 S2/S3 但仍有未評估項，群組保持 NOT_EVALUATED，
         不會被誤解為已達可通過條件。
         """
-        severities = [item.severity for item in self.measurements if item.group == group]
+        severities = [
+            item.severity
+            for item in self.measurements
+            if item.group == group and not item.metadata.get("non_graded", False)
+        ]
         if not severities:
             return Severity.NOT_EVALUATED
 

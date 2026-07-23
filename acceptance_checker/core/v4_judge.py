@@ -62,6 +62,7 @@ class V4AcceptanceJudge:
             item.metric_id
             for item in session.measurements
             if item.severity == Severity.NOT_EVALUATED
+            and not item.metadata.get("non_graded", False)
         ]
 
         if events:

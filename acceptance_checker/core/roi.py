@@ -445,7 +445,12 @@ def measure_16_zones(
     minimum = min(means)
     maximum = max(means)
     uniformity = minimum / maximum if maximum > 0 else 0.0
-    difference = (maximum - minimum) / maximum * 100.0 if maximum > 0 else 0.0
+    mean_of_zones = float(np.mean(means, dtype=np.float64))
+    difference = (
+        (maximum - minimum) / mean_of_zones * 100.0
+        if mean_of_zones > 0
+        else 0.0
+    )
     return ZoneMeasurement(
         zone_means=tuple(means),
         zone_boxes=tuple(boxes),

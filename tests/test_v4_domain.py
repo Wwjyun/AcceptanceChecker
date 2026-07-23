@@ -131,6 +131,27 @@ def test_group_status_keeps_missing_evidence_without_hiding_s0_or_s1():
     assert session.group_status(MetricGroup.G2) == Severity.S1
 
 
+def test_record_only_measurement_does_not_make_group_incomplete():
+    session = AcceptanceSession(
+        manifest=AcceptanceManifest(
+            machine_id="AOI-01",
+            optical_mode=OpticalMode.DIFFUSE_BRIGHT_FIELD,
+        )
+    )
+    session.add_measurement(_measurement("g1.mean", MetricGroup.G1, Severity.S3, 55.0))
+    recorded = _measurement(
+        "g1.spatial_std",
+        MetricGroup.G1,
+        Severity.NOT_EVALUATED,
+        value=2.5,
+        missing_reason="規格指定僅記錄、不分級",
+    )
+    recorded.metadata["non_graded"] = True
+    session.add_measurement(recorded)
+
+    assert session.group_status(MetricGroup.G1) == Severity.S3
+
+
 def test_measurement_validation_rejects_ambiguous_state():
     with pytest.raises(ValueError, match="missing_reason"):
         _measurement("g1.mean", MetricGroup.G1, Severity.NOT_EVALUATED, value=None)

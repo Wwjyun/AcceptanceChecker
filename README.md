@@ -303,8 +303,16 @@ coordinates are never interpreted as preview coordinates.
 
 `measure_raw_16_zones()` divides the effective inspection width into exactly 16 zones
 and reports each mean in `%FS`, together with `U = min / max` and the max-to-min
-brightness difference. GUI drag selection is also converted from the sampled preview
-back to an auditable original-image ROI.
+brightness difference divided by the mean of all 16 zones. GUI drag selection is also
+converted from the sampled preview back to an auditable original-image ROI.
+
+`G1Measurer` evaluates the complete mode-specific G1 set (10 diffuse, 9 specular, or
+9 dark-field metrics) directly from the preserved measurement plane. It requires
+explicit typed ROI evidence and marks unavailable formulas `NOT_EVALUATED`. Stray-light
+measurement requires separate reference, blocked, and dark images; hotspot detection
+uses the locked 30%FS/8-connected/50px definition; dark-field edge clipping uses every
+Golden defect's 5px ring and emits an S0 priority event for a continuous 3px break.
+Record-only values remain visible but do not incorrectly make a group incomplete.
 
 ## Validation
 

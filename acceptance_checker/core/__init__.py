@@ -4,6 +4,13 @@
 from .analyzer import ImageAnalyzer
 from .config import Thresholds
 from .detector import DefectDetector, DefectResult, RoiCnrResult, roi_cnr
+from .g1_measurement import (
+    DefectPolarity,
+    G1MeasurementInputs,
+    G1MeasurementReport,
+    G1Measurer,
+    MissingG1EvidenceError,
+)
 from .image import MeasurementPlaneError, RawImage
 from .judge import AcceptanceJudge
 from .legacy_adapter import LegacyMetricsAdapter, legacy_metrics_to_measurements
@@ -53,6 +60,11 @@ __all__ = [
     "DefectResult",
     "RoiCnrResult",
     "roi_cnr",
+    "DefectPolarity",
+    "G1MeasurementInputs",
+    "G1MeasurementReport",
+    "G1Measurer",
+    "MissingG1EvidenceError",
     "RawImage",
     "MeasurementPlaneError",
     "AcceptanceJudge",

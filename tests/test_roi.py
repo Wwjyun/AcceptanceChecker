@@ -171,7 +171,7 @@ def test_measure_16_zones_uses_effective_width_and_raw_scale():
     assert len(result.zone_means) == 16
     assert result.zone_means == tuple(float((index + 1) * 10) for index in range(16))
     assert result.uniformity_ratio == pytest.approx(10 / 160)
-    assert result.brightness_difference_pct == pytest.approx(93.75)
+    assert result.brightness_difference_pct == pytest.approx((160 - 10) / 85 * 100)
     assert result.zone_boxes[0] == (4, 1, 2, 4)
     assert result.zone_boxes[-1] == (34, 1, 2, 4)
     assert result.unit == "raw"
