@@ -205,7 +205,9 @@ The analyzer records:
   spatial SNR proxy (formal temporal SNR requires at least 30 aligned frames).
 - Defect proxy: automatic candidate count, sampled area, CNR, and contrast.
 - Pattern proxy: vertical and horizontal stripe score.
-- Sharpness proxy: Laplacian variance.
+- Diagnostic proxies: robust single-image noise, directional stripe scores, and
+  Laplacian variance. These remain legacy quick-check signals and never directly map
+  to a v4 severity.
 - Provenance / audit: `review_note` — optional free-text reason a human entered for why a result was accepted (see [Risk Communication Design](#risk-communication-design-score-as-signal-not-gate)).
 
 `RawImage` now keeps two distinct planes:
@@ -370,6 +372,23 @@ contour clarity is the boundary-gradient P10 in %FS/pixel, with an unclear conto
 forced to S0. Scale asymmetry and worst field error require versioned left/center/right
 (and stitch when applicable) calibration evidence. Encoder synchronization uses the
 P95 absolute deviation from the median and refuses fewer than 100 scans.
+
+## v4 G3 noise and sensor measurements
+
+`G3Measurer` produces all six G3 metrics from explicit evidence. DSNU uses the
+spatial standard deviation of an averaged dark L0 stack with at least 30 frames.
+PRNU subtracts the dark response and removes the per-pixel temporal variance
+contribution before normalizing by the mean response. Vertical FPN uses column
+means after averaging at least 100 uniform L0 frames.
+
+The remaining checks reuse the formal temporal SNR measurement, compare current
+L1 spatial standard deviation against an approved Golden value, and classify
+new bad or hot pixels by count, Golden-defect overlap, effective inspection
+area, and versioned fixed-mask coordinates. Missing acquisition evidence,
+unapproved Golden data, insufficient frames, or unmasked pixels inside the
+effective inspection area are reported as not evaluated instead of inferred.
+Legacy robust-noise, stripe-score, and Laplacian-variance values remain
+diagnostic proxies and do not directly determine a v4 grade.
 
 ## Validation
 

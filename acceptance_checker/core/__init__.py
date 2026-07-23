@@ -33,6 +33,13 @@ from .g2_measurement import (
     ScaleEvidence,
     SlantedEdgeEvidence,
 )
+from .g3_measurement import (
+    G3MeasurementError,
+    G3MeasurementInputs,
+    G3MeasurementReport,
+    G3Measurer,
+    SensorFrameSeries,
+)
 from .image import MeasurementPlaneError, RawImage
 from .judge import AcceptanceJudge
 from .legacy_adapter import LegacyMetricsAdapter, legacy_metrics_to_measurements
@@ -115,6 +122,11 @@ __all__ = [
     "G2Measurer",
     "ScaleEvidence",
     "SlantedEdgeEvidence",
+    "G3MeasurementError",
+    "G3MeasurementInputs",
+    "G3MeasurementReport",
+    "G3Measurer",
+    "SensorFrameSeries",
     "RawImage",
     "MeasurementPlaneError",
     "AcceptanceJudge",

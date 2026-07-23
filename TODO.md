@@ -188,12 +188,12 @@
 
 ### P3.2 G3 雜訊與感測器
 
-- [ ] 遮光 L0 多張平均的 DSNU。
-- [ ] 均勻照明 L0 的 PRNU，扣除時域噪聲貢獻。
-- [ ] N≥100 多張平均後的縱向 FPN。
-- [ ] 相對 Golden 的空間 STD 增幅。
-- [ ] 壞點／熱點新增數量、位置、有效檢測區判斷與固定遮罩座標。
-- [ ] 將既有 stripe score、robust noise、Laplacian variance 明確標為 diagnostic proxy，未經驗證前不直接對應 v4 等級。
+- [x] 遮光 L0 多張平均的 DSNU。
+- [x] 均勻照明 L0 的 PRNU，扣除時域噪聲貢獻。
+- [x] N≥100 多張平均後的縱向 FPN。
+- [x] 相對 Golden 的空間 STD 增幅。
+- [x] 壞點／熱點新增數量、位置、有效檢測區判斷與固定遮罩座標。
+- [x] 將既有 stripe score、robust noise、Laplacian variance 明確標為 diagnostic proxy，未經驗證前不直接對應 v4 等級。
 
 ### P3.3 G5 完整性與多相機拼接
 

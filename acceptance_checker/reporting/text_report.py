@@ -66,16 +66,16 @@ P99-P01 灰階展開：{m.hist_spread_p99_p01:.1f}
 最佳候選 CNR：{m.auto_defect_cnr_est:.3f}
 最佳候選 contrast：{m.auto_defect_contrast_est:.3f}
 最佳候選 sampled area：{m.auto_defect_area_px_sampled}
-robust noise sigma：{m.robust_noise_sigma:.3f}
+robust noise sigma（diagnostic proxy）：{m.robust_noise_sigma:.3f}
 單張空間 SNR proxy：{m.signal_to_noise_ratio:.3f}（非正式時域 SNR）
 
 【背景與條紋風險】
 背景 std proxy：{m.bg_std_est:.3f}
-vertical stripe score：{m.vertical_stripe_score:.3f}
-horizontal stripe score：{m.horizontal_stripe_score:.3f}
+vertical stripe score（diagnostic proxy）：{m.vertical_stripe_score:.3f}
+horizontal stripe score（diagnostic proxy）：{m.horizontal_stripe_score:.3f}
 
 【清晰度 / 對焦 proxy】
-Laplacian variance：{m.sharpness_laplacian_var:.3f}
+Laplacian variance（diagnostic proxy）：{m.sharpness_laplacian_var:.3f}
 
 【高風險項目】
 {m.fail_reasons if m.fail_reasons else "無"}

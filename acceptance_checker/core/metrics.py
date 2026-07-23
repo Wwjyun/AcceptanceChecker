@@ -40,6 +40,7 @@ class Metrics:
     uniformity_ratio: float = 0.0
 
     bg_std_est: float = 0.0
+    # 以下為 legacy 單張 diagnostic proxies，不得直接映射 v4 G3 等級。
     robust_noise_sigma: float = 0.0
     # legacy 欄位名；實值是單張 mean / robust spatial sigma proxy，不是時域 SNR。
     signal_to_noise_ratio: float = 0.0
