@@ -201,6 +201,28 @@ The analyzer records:
 - Sharpness proxy: Laplacian variance.
 - Provenance / audit: `review_note` — optional free-text reason a human entered for why a result was accepted (see [Risk Communication Design](#risk-communication-design-score-as-signal-not-gate)).
 
+`RawImage` now keeps two distinct planes:
+
+- `raw_gray`: the original grayscale dtype and values used by formal `%FS` measurements.
+- `gray8`: an independent preview/legacy-analysis plane used by the current detector and GUI.
+
+For uint16 containers, pass the actual sensor bit depth when it is known:
+
+```python
+from acceptance_checker import RawImage
+
+raw = RawImage.load("frame12.tif", bit_depth=12, normalization="percentile")
+assert raw.full_scale == 4095
+
+mean_pct_fs = float(raw.percent_of_full_scale().mean())  # reads raw_gray, not gray8
+preview = raw.gray8                                      # may be percentile-stretched
+```
+
+Supported declared integer depths are 8/10/12/14/16. Values above the declared Full Scale,
+NaN/Inf inputs, and `%FS` requests on float/min-max images are rejected instead of silently
+inventing a formal measurement scale. `measurement_sample()` preserves the original dtype, while
+`sample_box_to_original()` maps sampled coordinates back to the full-resolution image.
+
 Default threshold fields are defined in `acceptance_checker/core/config.py` and mirrored in `thresholds.default.json`. Every `Metrics` field (including `review_note`) is written as a CSV column by `CsvExporter` and `HistoryLogger`, since both use `dataclasses.asdict()` — no per-field export code is needed.
 
 ## Weighted Scoring

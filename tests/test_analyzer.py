@@ -62,3 +62,13 @@ def test_file_name_recorded():
     m, _, _ = analyzer.analyze(RawImage(make_uniform(100), "uint8"), "/tmp/foo/bar.bmp")
     assert m.file_name == "bar.bmp"
     assert m.width_px == 600 and m.height_px == 400
+
+
+def test_analyzer_records_original_bit_depth_and_full_scale():
+    img = np.full((100, 120), 2048, dtype=np.uint16)
+    raw = RawImage.from_array(img, bit_depth=12)
+
+    metrics, _, _ = ImageAnalyzer().analyze(raw, "sample12.tif")
+
+    assert metrics.bit_depth == 12
+    assert metrics.full_scale == 4095

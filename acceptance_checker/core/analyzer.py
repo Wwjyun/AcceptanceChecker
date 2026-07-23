@@ -37,6 +37,8 @@ class ImageAnalyzer:
         m.width_px = raw.width
         m.height_px = raw.height
         m.dtype = raw.original_dtype
+        m.bit_depth = raw.bit_depth or 0
+        m.full_scale = raw.full_scale or 0
         m.norm_method = raw.norm_method
         m.analysis_step = int(step)
 

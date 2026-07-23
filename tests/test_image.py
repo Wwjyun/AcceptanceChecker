@@ -4,8 +4,9 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
-from acceptance_checker import RawImage
+from acceptance_checker import MeasurementPlaneError, RawImage
 
 
 def test_uint8_is_copied_unchanged():
@@ -58,3 +59,78 @@ def test_analysis_sample_keeps_full_when_small():
     sample, step = raw.analysis_sample()
     assert step == 1
     assert sample.shape == (100, 100)
+
+
+@pytest.mark.parametrize("bit_depth", [8, 10, 12, 14, 16])
+def test_percent_fs_uses_declared_original_bit_depth(bit_depth):
+    dtype = np.uint8 if bit_depth == 8 else np.uint16
+    full_scale = (1 << bit_depth) - 1
+    img = np.full((4, 5), full_scale // 2, dtype=dtype)
+
+    raw = RawImage.from_array(img, bit_depth=bit_depth)
+
+    assert raw.bit_depth == bit_depth
+    assert raw.full_scale == full_scale
+    assert raw.raw_gray.dtype == dtype
+    assert float(raw.percent_of_full_scale()[0, 0]) == pytest.approx(
+        (full_scale // 2) / full_scale * 100.0
+    )
+    assert raw.threshold_at_percent_fs(98) == pytest.approx(full_scale * 0.98)
+
+
+def test_percentile_preview_never_replaces_raw_measurement_plane():
+    img = np.arange(400, dtype=np.uint16).reshape(20, 20) + 1000
+
+    raw = RawImage.from_array(img, normalization="percentile", bit_depth=12)
+
+    assert raw.preview_is_transformed
+    assert np.array_equal(raw.raw_gray, img)
+    assert raw.gray8.dtype == np.uint8
+    assert raw.full_scale == 4095
+
+
+def test_float_preview_has_no_formal_full_scale():
+    raw = RawImage.from_array(np.array([[0.0, 0.5], [1.0, 0.25]], dtype=np.float32))
+
+    assert raw.bit_depth is None
+    assert raw.full_scale is None
+    with pytest.raises(MeasurementPlaneError, match="%FS"):
+        raw.percent_of_full_scale()
+
+
+@pytest.mark.parametrize("bad_value", [np.nan, np.inf, -np.inf])
+def test_non_finite_image_is_rejected(bad_value):
+    img = np.zeros((3, 3), dtype=np.float32)
+    img[1, 1] = bad_value
+
+    with pytest.raises(ValueError, match="NaN 或 Inf"):
+        RawImage.from_array(img)
+
+
+def test_declared_bit_depth_validates_container_values():
+    img = np.array([[0, 1024]], dtype=np.uint16)
+
+    with pytest.raises(ValueError, match="超過宣告"):
+        RawImage.from_array(img, bit_depth=10)
+
+
+def test_measurement_sample_preserves_raw_dtype_and_box_mapping():
+    img = np.zeros((2000, 3000), dtype=np.uint16)
+    raw = RawImage.from_array(img, bit_depth=12)
+
+    sample, step = raw.measurement_sample(max_pixels=100_000)
+    mapped = raw.sample_box_to_original((2, 3, 10, 20), step)
+
+    assert sample.dtype == np.uint16
+    assert step > 1
+    assert mapped == (2 * step, 3 * step, 10 * step, 20 * step)
+
+
+def test_uint16_color_to_gray_preserves_measurement_dtype():
+    img = np.zeros((4, 5, 3), dtype=np.uint16)
+    img[:, :, 1] = 2048
+
+    raw = RawImage.from_array(img, bit_depth=12)
+
+    assert raw.raw_gray.dtype == np.uint16
+    assert raw.raw_gray.shape == (4, 5)

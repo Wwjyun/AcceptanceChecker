@@ -4,7 +4,7 @@
 from .analyzer import ImageAnalyzer
 from .config import Thresholds
 from .detector import DefectDetector, DefectResult, RoiCnrResult, roi_cnr
-from .image import RawImage
+from .image import MeasurementPlaneError, RawImage
 from .judge import AcceptanceJudge
 from .legacy_adapter import LegacyMetricsAdapter, legacy_metrics_to_measurements
 from .metrics import Metrics
@@ -35,6 +35,7 @@ __all__ = [
     "RoiCnrResult",
     "roi_cnr",
     "RawImage",
+    "MeasurementPlaneError",
     "AcceptanceJudge",
     "LegacyMetricsAdapter",
     "legacy_metrics_to_measurements",

@@ -81,11 +81,11 @@
 
 ### P0.3 保留原始 bit depth 與量測平面
 
-- [ ] `RawImage` 同時保留原始灰階陣列、原始 dtype、bit depth、FS 與獨立的 8-bit preview。
-- [ ] `%FS`、2%FS、86%FS、98%FS 等門檻直接在原始數據上計算。
-- [ ] 不再把 percentile stretch 後影像用於正式驗收；若使用，輸出須標示為 L2/preview。
-- [ ] 抽樣後的面積、座標與連通區結果可回推原圖尺度；不適合抽樣的指標強制使用全解析度 ROI。
-- [ ] 補齊 8/10/12/14/16-bit、float、常數影像、NaN/Inf 與彩色輸入的行為測試。
+- [x] `RawImage` 同時保留原始灰階陣列、原始 dtype、bit depth、FS 與獨立的 8-bit preview。
+- [x] `%FS`、2%FS、86%FS、98%FS 等門檻直接在原始數據上計算。
+- [x] 不再把 percentile stretch 後影像用於正式驗收；若使用，輸出須標示為 L2/preview。
+- [x] 抽樣後的面積、座標與連通區結果可回推原圖尺度；不適合抽樣的指標強制使用全解析度 ROI。
+- [x] 補齊 8/10/12/14/16-bit、float、常數影像、NaN/Inf 與彩色輸入的行為測試。
 
 驗收條件：
 

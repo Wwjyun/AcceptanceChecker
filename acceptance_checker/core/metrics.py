@@ -13,6 +13,8 @@ class Metrics:
     width_px: int = 0
     height_px: int = 0
     dtype: str = ""
+    bit_depth: int = 0
+    full_scale: int = 0
     norm_method: str = ""
     analysis_step: int = 1
 

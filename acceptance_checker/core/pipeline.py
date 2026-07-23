@@ -41,12 +41,14 @@ class AcceptancePipeline:
         cache_size: int = 8,
         normalization: str = "linear",
         percentiles: Tuple[float, float] = (1.0, 99.0),
+        bit_depth: Optional[int] = None,
     ):
         self.thresholds = thresholds or Thresholds()
         self.analyzer = analyzer or ImageAnalyzer(max_pixels=max_pixels)
         self.judge = judge or AcceptanceJudge(self.thresholds)
         self.normalization = normalization
         self.percentiles = percentiles
+        self.bit_depth = bit_depth
         # 依 (絕對路徑, mtime_ns, 大小) 快取分析結果，避免重複開同一張圖時重算。
         self._cache_size = cache_size
         self._cache: "OrderedDict[Tuple[str, int, int], AnalysisResult]" = OrderedDict()
@@ -66,7 +68,12 @@ class AcceptancePipeline:
             self._cache.move_to_end(key)
             return self._cache[key]
 
-        raw = RawImage.load(file_path, self.normalization, self.percentiles)
+        raw = RawImage.load(
+            file_path,
+            self.normalization,
+            self.percentiles,
+            bit_depth=self.bit_depth,
+        )
         metrics, sample, defect = self.analyzer.analyze(raw, file_path)
         self.judge.judge(metrics)
         overlay = self._resolve_overlay(defect, sample)
