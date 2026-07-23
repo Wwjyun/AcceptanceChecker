@@ -51,6 +51,14 @@ from .g5_measurement import (
     InterCameraGrayEvidence,
     StitchEvidence,
 )
+from .g6_measurement import (
+    G6MeasurementError,
+    G6MeasurementInputs,
+    G6MeasurementReport,
+    G6Measurer,
+    clopper_pearson_upper,
+    wilson_interval,
+)
 from .golden_catalog import (
     DetectorDecision,
     DetectorResultSet,
@@ -165,6 +173,12 @@ __all__ = [
     "GoldenCatalogRepository",
     "GoldenDisposition",
     "GoldenSample",
+    "G6MeasurementError",
+    "G6MeasurementInputs",
+    "G6MeasurementReport",
+    "G6Measurer",
+    "clopper_pearson_upper",
+    "wilson_interval",
     "RawImage",
     "MeasurementPlaneError",
     "AcceptanceJudge",

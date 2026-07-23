@@ -422,6 +422,20 @@ version, threshold, score, decision, capture-attempt count, and import source,
 and must exactly cover the catalog version's sample IDs. The legacy automatic
 candidate detector is therefore kept outside formal G6 evidence.
 
+`G6Measurer` consumes those two approved evidence sets and emits all eight G6
+metrics. Defect CNR and native-gray contrast are measured from each stored
+defect ROI and its ring; bright and dark polarities are reported separately and
+the worse CNR controls the grade. NG results retain detection numerator,
+denominator, Wilson interval, worst threshold margin, retry count, and stable
+miss IDs. Sample counts and required-type coverage are evaluated independently.
+
+PASS false-positive results retain the same ratio fields and require at least
+200 samples before S3 or S2 is possible. The exact 95% one-sided
+Clopper–Pearson upper bound is a separate metric. Full-width consistency covers
+left, center, right, and stitch regions with per-region ratios and intervals.
+A stable NG miss, an approved effective defect width below two pixels, or an
+evidence-backed unrecognizable minimum defect produces an S0 priority event.
+
 ## Validation
 
 Run the core test suite:
