@@ -357,6 +357,20 @@ The G5 traceability result carries `session_id`, `spec_version`, and `manifest_h
 Those keys are also preserved by session JSON, legacy-compatible CSV export, and the
 append-only history log.
 
+## v4 G2 resolution and scan geometry
+
+`G2Measurer` produces all seven G2 metrics from versioned target evidence. Its
+slanted-edge path validates 20%FS minimum contrast and a 2–15° edge angle, constructs
+a 4× oversampled ESF, differentiates to an apodized LSF, and samples the normalized
+FFT at 0.25 cycles/pixel (Nyquist/2) in both scan and sensor directions. The same ESF
+provides a locked 10–90% scan-edge blur extent.
+
+Minimum-defect width is the worst connected component's distance-transform width;
+contour clarity is the boundary-gradient P10 in %FS/pixel, with an unclear contour
+forced to S0. Scale asymmetry and worst field error require versioned left/center/right
+(and stitch when applicable) calibration evidence. Encoder synchronization uses the
+P95 absolute deviation from the median and refuses fewer than 100 scans.
+
 ## Validation
 
 Run the core test suite:

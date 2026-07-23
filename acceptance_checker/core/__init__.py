@@ -25,6 +25,14 @@ from .g1_measurement import (
     G1Measurer,
     MissingG1EvidenceError,
 )
+from .g2_measurement import (
+    G2MeasurementError,
+    G2MeasurementInputs,
+    G2MeasurementReport,
+    G2Measurer,
+    ScaleEvidence,
+    SlantedEdgeEvidence,
+)
 from .image import MeasurementPlaneError, RawImage
 from .judge import AcceptanceJudge
 from .legacy_adapter import LegacyMetricsAdapter, legacy_metrics_to_measurements
@@ -101,6 +109,12 @@ __all__ = [
     "G1MeasurementReport",
     "G1Measurer",
     "MissingG1EvidenceError",
+    "G2MeasurementError",
+    "G2MeasurementInputs",
+    "G2MeasurementReport",
+    "G2Measurer",
+    "ScaleEvidence",
+    "SlantedEdgeEvidence",
     "RawImage",
     "MeasurementPlaneError",
     "AcceptanceJudge",
