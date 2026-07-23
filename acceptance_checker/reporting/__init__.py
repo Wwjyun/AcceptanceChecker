@@ -3,6 +3,15 @@
 
 from .csv_export import CsvExporter
 from .drift_report import DriftReport, DriftReporter, DriftStats
+from .formal_report import (
+    FormalAcceptanceReport,
+    FormalReportError,
+    ImprovementAction,
+    OpticalDeclaration,
+    ReportArtifact,
+    ReportSignoff,
+    TestObject,
+)
 from .history_log import HistoryLogger
 from .recommendations import Recommendation, RecommendationBuilder
 from .text_report import ReportBuilder
@@ -16,4 +25,11 @@ __all__ = [
     "DriftReporter",
     "DriftReport",
     "DriftStats",
+    "FormalAcceptanceReport",
+    "FormalReportError",
+    "ImprovementAction",
+    "OpticalDeclaration",
+    "ReportArtifact",
+    "ReportSignoff",
+    "TestObject",
 ]

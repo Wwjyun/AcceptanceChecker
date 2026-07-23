@@ -469,6 +469,24 @@ immediately invalidates the waiver. `WaiverTrackingReport` records 30-day
 hardware progress, remaining work, actual misses/false calls, current metrics,
 new S1/S0 items, and evidence; overdue tracking removes extension eligibility.
 
+## v4 formal acceptance report
+
+`FormalAcceptanceReport` implements all nine section 16.1 chapters: test object,
+optical declaration, precondition lock, G1–G6 measurements, ordered decision,
+appendix-B diagnosis, responsibility, prioritized improvements, and the raw-data
+manifest. Every metric row retains value, grade, group, formula and formula
+version, ROI, measurement date, image level, sample count, evidence paths, and
+missing reason. Evidence paths must appear in the report's hashed image,
+parameter, and script artifact list before export is allowed.
+
+The report exports machine-readable JSON, styled HTML, and a paginated PDF with
+Traditional-Chinese font embedding, repeated measurement-table headers,
+appendix-B regression charts and exponents, page headers/footers, and all three
+signoffs. Dissenting opinions are preserved beside the signatures. CSV remains
+a detail export only. Every formal report carries the immutable statement that
+its thresholds are internal engineering control limits, not ISO-mandated
+acceptance thresholds.
+
 ## Validation
 
 Run the core test suite:

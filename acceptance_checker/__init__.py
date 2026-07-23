@@ -135,7 +135,17 @@ from .core import (
     sidecar_candidates,
     wilson_interval,
 )
-from .reporting import CsvExporter, ReportBuilder
+from .reporting import (
+    CsvExporter,
+    FormalAcceptanceReport,
+    FormalReportError,
+    ImprovementAction,
+    OpticalDeclaration,
+    ReportArtifact,
+    ReportBuilder,
+    ReportSignoff,
+    TestObject,
+)
 
 __all__ = [
     "AcceptanceDatasetManifest",
@@ -240,6 +250,13 @@ __all__ = [
     "CsvExporter",
     "AcceptancePipeline",
     "AnalysisResult",
+    "FormalAcceptanceReport",
+    "FormalReportError",
+    "ImprovementAction",
+    "OpticalDeclaration",
+    "ReportArtifact",
+    "ReportSignoff",
+    "TestObject",
     "ApprovalLevel",
     "WaivedMetric",
     "Waiver",

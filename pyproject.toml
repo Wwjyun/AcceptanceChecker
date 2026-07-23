@@ -13,6 +13,7 @@ dependencies = [
     "opencv-python>=4.5",
     "numpy>=1.21",
     "PySide6>=6.5",
+    "reportlab>=4.0",
 ]
 
 [project.optional-dependencies]
