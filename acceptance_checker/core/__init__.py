@@ -9,6 +9,13 @@ from .judge import AcceptanceJudge
 from .legacy_adapter import LegacyMetricsAdapter, legacy_metrics_to_measurements
 from .metrics import Metrics
 from .pipeline import AcceptancePipeline, AnalysisResult
+from .specification import (
+    MetricSpecification,
+    SpecificationError,
+    V4Specification,
+    load_default_v4_spec,
+    load_v4_spec,
+)
 from .v4_domain import (
     AcceptanceManifest,
     AcceptanceSession,
@@ -34,6 +41,11 @@ __all__ = [
     "Metrics",
     "AcceptancePipeline",
     "AnalysisResult",
+    "MetricSpecification",
+    "SpecificationError",
+    "V4Specification",
+    "load_default_v4_spec",
+    "load_v4_spec",
     "AcceptanceManifest",
     "AcceptanceSession",
     "ImageLevel",

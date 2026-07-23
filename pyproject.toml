@@ -31,6 +31,9 @@ acceptance-checker = "acceptance_checker.gui:run_app"
 [tool.setuptools.packages.find]
 include = ["acceptance_checker*"]
 
+[tool.setuptools.package-data]
+"acceptance_checker.specs" = ["*.json"]
+
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]

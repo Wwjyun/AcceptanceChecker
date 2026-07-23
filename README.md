@@ -166,6 +166,28 @@ mode-specific ROI, raw-bit-depth, multi-image, or Golden evidence required by v4
 `quality_score`, `risk_level`, and `overall_status` therefore remain legacy engineering signals,
 not formal v4 acceptance results.
 
+The draft v4 metric catalog is packaged as
+`acceptance_checker/specs/v4_draft.json`. It contains all 63 rows from the discussion workbook,
+including mode applicability, units, displayed S3–S0 bands, machine-readable numeric rules,
+evidence requirement profiles, formula identifiers, and S0 special-event notes:
+
+```python
+from acceptance_checker import OpticalMode, load_default_v4_spec
+
+spec = load_default_v4_spec()
+diffuse_metrics = spec.metrics_for_mode(OpticalMode.DIFFUSE_BRIGHT_FIELD)
+severity = spec.get_metric("g1.diffuse.background_cv").classify(0.10)
+
+print(spec.spec_version, len(spec.metrics), len(diffuse_metrics), severity.value)
+```
+
+The packaged profile is deliberately marked `draft_unapproved`. Pure numeric rules use
+deterministic, non-overlapping boundaries; record-only and compound/qualitative rules refuse a
+single-number classification. The source documents leave dark-field background mean from
+2% through below 3% FS unclassified, so that interval is explicitly `NOT_EVALUATED` instead of
+being guessed into a passing band. Loading rejects unsupported schema versions, missing rows,
+duplicate metric IDs, invalid requirement profiles, and malformed numeric thresholds.
+
 ## Metrics
 
 The analyzer records:

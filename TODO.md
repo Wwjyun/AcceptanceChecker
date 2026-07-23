@@ -67,11 +67,11 @@
 
 ### P0.2 將規範門檻改為版本化資料
 
-- [ ] 建立 machine-readable v4 規格檔，逐項定義 metric id、適用模式、單位、S3～S0 邊界、邊界包含規則、必要 ROI/樣本與 S0 特例。
-- [ ] 三種 G1 模式各自存放門檻；G2～G6 使用共通表。
-- [ ] 規格檔包含 `spec_version`、來源文件、核准狀態與生效日期。
-- [ ] 啟動時驗證：無重疊區間、無缺口、引用的 metric id 存在、S0 特例可解析。
-- [ ] 舊 `thresholds.default.json` 標記為 legacy score profile，避免與 v4 規格混用。
+- [x] 建立 machine-readable v4 規格檔，逐項定義 metric id、適用模式、單位、S3～S0 邊界、邊界包含規則、必要 ROI/樣本與 S0 特例。
+- [x] 三種 G1 模式各自存放門檻；G2～G6 使用共通表。
+- [x] 規格檔包含 `spec_version`、來源文件、核准狀態與生效日期。
+- [x] 啟動時驗證：無重疊區間、無缺口、引用的 metric id 存在、S0 特例可解析。
+- [x] 舊 `thresholds.default.json` 標記為 legacy score profile，避免與 v4 規格混用。
 
 驗收條件：
 

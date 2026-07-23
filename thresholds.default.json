@@ -1,4 +1,6 @@
 {
+  "profile_type": "legacy_score",
+  "profile_version": "1.0",
   "bg_std_fail": 10.0,
   "bg_std_warn": 6.0,
   "clipping_fail_pct": 1.0,
