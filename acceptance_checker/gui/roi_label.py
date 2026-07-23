@@ -59,10 +59,11 @@ class RoiSelectLabel(QLabel):
 
     def _to_image_rect(self, disp: QRect) -> Optional[Tuple[int, int, int, int]]:
         geo = self._draw_geometry()
-        if geo is None:
+        source = self._src
+        if geo is None or source is None:
             return None
         scale, off_x, off_y = geo
-        iw, ih = self._src.width(), self._src.height()
+        iw, ih = source.width(), source.height()
 
         x1 = (min(disp.left(), disp.right()) - off_x) / scale
         y1 = (min(disp.top(), disp.bottom()) - off_y) / scale

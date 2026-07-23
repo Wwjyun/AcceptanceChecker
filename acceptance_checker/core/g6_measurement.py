@@ -169,6 +169,8 @@ class G6Measurer:
                     f"formal CNR image is missing for Golden sample {sample.sample_id}"
                 )
             cnr, delta_gray, background_std = _sample_cnr(sample, image)
+            assert sample.defect_roi is not None
+            assert sample.background_ring is not None
             rows.append(
                 {
                     "sample_id": sample.sample_id,
@@ -490,22 +492,24 @@ class G6Measurer:
 def _sample_cnr(sample: GoldenSample, image: np.ndarray) -> Tuple[float, float, float]:
     if image.ndim != 2 or image.size == 0 or not np.all(np.isfinite(image)):
         raise G6MeasurementError(f"Golden image {sample.sample_id} must be a finite 2D array")
-    assert sample.defect_roi is not None and sample.background_ring is not None
+    defect_roi = sample.defect_roi
+    background_ring = sample.background_ring
+    assert defect_roi is not None and background_ring is not None
     height, width = image.shape
-    sample.defect_roi.validate_for_shape(width, height)
-    sample.background_ring.validate_for_shape(width, height)
-    defect = image[
-        sample.defect_roi.y : sample.defect_roi.y2,
-        sample.defect_roi.x : sample.defect_roi.x2,
+    defect_roi.validate_for_shape(width, height)
+    background_ring.validate_for_shape(width, height)
+    defect: np.ndarray = image[
+        defect_roi.y : defect_roi.y2,
+        defect_roi.x : defect_roi.x2,
     ].astype(np.float64)
-    ring = image[
-        sample.background_ring.y : sample.background_ring.y2,
-        sample.background_ring.x : sample.background_ring.x2,
+    ring: np.ndarray = image[
+        background_ring.y : background_ring.y2,
+        background_ring.x : background_ring.x2,
     ].astype(np.float64)
     mask = np.ones(ring.shape, dtype=bool)
-    y1 = sample.defect_roi.y - sample.background_ring.y
-    x1 = sample.defect_roi.x - sample.background_ring.x
-    mask[y1 : y1 + sample.defect_roi.height, x1 : x1 + sample.defect_roi.width] = False
+    y1 = defect_roi.y - background_ring.y
+    x1 = defect_roi.x - background_ring.x
+    mask[y1 : y1 + defect_roi.height, x1 : x1 + defect_roi.width] = False
     background = ring[mask]
     if background.size < 20:
         raise G6MeasurementError(

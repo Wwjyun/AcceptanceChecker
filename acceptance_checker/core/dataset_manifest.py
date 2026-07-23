@@ -13,6 +13,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Sequence, Tuple
 
+from acceptance_checker.versions import DEFAULT_SPEC_VERSION
+
 from .v4_domain import ImageLevel, OpticalMode
 
 
@@ -266,7 +268,7 @@ class AcceptanceDatasetManifest:
     precondition_lock: PreconditionLock
     images: List[ImageEvidence] = field(default_factory=list)
     session_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    spec_version: str = "v4-draft"
+    spec_version: str = DEFAULT_SPEC_VERSION
     schema_version: str = "1.0"
     created_at: str = field(default_factory=_utc_now_iso)
 
@@ -494,7 +496,7 @@ def build_dataset_manifest(
     optical_mode: OpticalMode,
     precondition_lock: PreconditionLock,
     image_paths: Iterable[str],
-    spec_version: str = "v4-draft",
+    spec_version: str = DEFAULT_SPEC_VERSION,
 ) -> AcceptanceDatasetManifest:
     manifest = AcceptanceDatasetManifest(
         machine_id=machine_id,

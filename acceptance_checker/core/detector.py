@@ -58,7 +58,7 @@ def roi_cnr(image: np.ndarray, rect: Tuple[int, int, int, int], ring_pad: int = 
     if x2 <= x1 or y2 <= y1:
         return RoiCnrResult()
 
-    img = image.astype(np.float32)
+    img: np.ndarray = image.astype(np.float32)
     defect_vals = img[y1:y2, x1:x2].reshape(-1)
 
     pad = ring_pad if ring_pad > 0 else int(max(8, min(80, max(x2 - x1, y2 - y1) * 0.5)))
@@ -125,7 +125,7 @@ class DefectDetector:
 
     def robust_noise_sigma(self, sample: np.ndarray) -> float:
         """用 residual 的 MAD 估 robust noise sigma。"""
-        img = sample.astype(np.float32)
+        img: np.ndarray = sample.astype(np.float32)
         residual = img - self._background(img)
         med = float(np.median(residual))
         mad = float(np.median(np.abs(residual - med)))
@@ -135,7 +135,7 @@ class DefectDetector:
         if sample.size == 0:
             return DefectResult()
 
-        img = sample.astype(np.float32)
+        img: np.ndarray = sample.astype(np.float32)
         h, w = img.shape[:2]
 
         bg = self._background(img)
@@ -173,7 +173,11 @@ class DefectDetector:
     def _collect_candidates(
         self, img: np.ndarray, mask: np.ndarray, h: int, w: int
     ) -> List[Tuple[float, float, int, Tuple[int, int, int, int]]]:
-        num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(mask, connectivity=8)
+        num_labels, labels_raw, stats_raw, _ = cv2.connectedComponentsWithStats(
+            mask, connectivity=8
+        )
+        labels = np.asarray(labels_raw)
+        stats = np.asarray(stats_raw)
 
         candidates: List[Tuple[float, float, int, Tuple[int, int, int, int]]] = []
         min_area = max(5, int(0.000001 * h * w))

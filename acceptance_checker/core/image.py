@@ -159,7 +159,7 @@ class RawImage:
             return gray8, original_dtype, f"{resolved_bit_depth}bit-linear"
 
         # 其他型別（float 等）：min-max 拉伸
-        arr = img.astype(np.float32)
+        arr: np.ndarray = img.astype(np.float32)
         mn, mx = float(np.nanmin(arr)), float(np.nanmax(arr))
         if mx <= mn:
             return np.zeros_like(arr, dtype=np.uint8), original_dtype, "zeros(常數影像)"
@@ -229,7 +229,7 @@ class RawImage:
     def _percentile_stretch(img: np.ndarray, percentiles: Tuple[float, float]):
         """依低/高百分位把影像拉伸到 0~255。"""
         lo_pct, hi_pct = percentiles
-        arr = img.astype(np.float32)
+        arr: np.ndarray = img.astype(np.float32)
         lo = float(np.percentile(arr, lo_pct))
         hi = float(np.percentile(arr, hi_pct))
         method = f"16bit-percentile({lo_pct:g}-{hi_pct:g})"

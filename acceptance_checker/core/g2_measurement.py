@@ -246,7 +246,7 @@ class G2Measurer:
             raise G2MeasurementError("缺陷 mask 無可辨識連通區")
         widths: List[float] = []
         clarity_values: List[float] = []
-        image = inputs.defect_image.astype(np.float64)
+        image: np.ndarray = inputs.defect_image.astype(np.float64)
         gradient_x = cv2.Sobel(image, cv2.CV_64F, 1, 0, ksize=3)
         gradient_y = cv2.Sobel(image, cv2.CV_64F, 0, 1, ksize=3)
         gradient = np.hypot(gradient_x, gradient_y) / 4.0
@@ -358,7 +358,7 @@ class G2Measurer:
 def _measure_slanted_edge(evidence: SlantedEdgeEvidence) -> Dict[str, Any]:
     height, width = evidence.image.shape
     evidence.roi.validate_for_shape(width, height)
-    crop = evidence.image[
+    crop: np.ndarray = evidence.image[
         evidence.roi.y : evidence.roi.y2,
         evidence.roi.x : evidence.roi.x2,
     ].astype(np.float64)

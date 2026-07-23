@@ -256,7 +256,7 @@ def check_gui() -> None:
     window = AcceptanceCheckerWindow()
     window.show()
     assert window.mode_tabs.currentIndex() == 0
-    assert "正式 v4 Session" in window.mode_tabs.tabText(0)
+    assert "v4 Session 候選流程" in window.mode_tabs.tabText(0)
     assert "非完整 v4" in window.mode_tabs.tabText(1)
     assert window.session_workflow.pages.count() == 6
 

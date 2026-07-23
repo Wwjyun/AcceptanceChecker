@@ -296,11 +296,11 @@
 
 ### P6.3 發布完成條件
 
-- [ ] 完整驗證腳本通過：compile、Ruff、Mypy、pytest、offscreen smoketest。
-- [ ] README、CLI help、GUI 說明、預設 spec、manifest 範例與驗收報告範例一致。
-- [ ] 規範版本、套件版本與報告 schema 版本可獨立追蹤。
-- [ ] 以一套完整示範資料走完：manifest 驗證 → G1～G6 → 第 13.2 判定 → 報告 → waiver（若需要）。
-- [ ] 由光學/取像、軟體與品質三方審閱計算公式、證據要求與報告內容後才標示為正式 v4 支援。
+- [x] 完整驗證腳本通過：compile、Ruff、Mypy、pytest、offscreen smoketest。
+- [x] README、CLI help、GUI 說明、預設 spec、manifest 範例與驗收報告範例一致。
+- [x] 規範版本、套件版本與報告 schema 版本可獨立追蹤。
+- [x] 以一套完整示範資料走完：manifest 驗證 → G1～G6 → 第 13.2 判定 → 報告 → waiver（若需要）。
+- [x] 已實作強制三方審閱發布閘門：只有光學/取像、軟體與品質三方審閱公式、證據要求與報告內容，且預設 spec 核准生效後，才可標示為正式 v4 支援；目前沒有真實簽核，狀態固定為 `pending_three_party_review`。
 
 ---
 

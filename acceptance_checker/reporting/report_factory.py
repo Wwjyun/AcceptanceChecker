@@ -12,6 +12,7 @@ from acceptance_checker.core.dataset_manifest import PreconditionLock
 from acceptance_checker.core.responsibility import ResponsibilityAnalyzer, ReviewParty
 from acceptance_checker.core.v4_domain import AcceptanceSession
 from acceptance_checker.core.v4_judge import V4Decision
+from acceptance_checker.versions import FORMAL_REPORT_SCHEMA_VERSION
 
 from .formal_report import (
     FormalAcceptanceReport,
@@ -54,7 +55,9 @@ def build_formal_report(
 
     return FormalAcceptanceReport(
         report_id=str(config.get("report_id", f"RPT-{session.manifest.session_id}")),
-        report_schema_version=str(config.get("report_schema_version", "1.0")),
+        report_schema_version=str(
+            config.get("report_schema_version", FORMAL_REPORT_SCHEMA_VERSION)
+        ),
         created_at=str(config.get("created_at", _utc_now_iso())),
         measurement_date=str(config.get("measurement_date", _utc_now_iso())),
         test_object=TestObject(
@@ -125,7 +128,7 @@ def report_config_template(session: AcceptanceSession) -> Dict[str, Any]:
     mode = session.manifest.optical_mode.value
     return {
         "report_id": f"RPT-{session.manifest.session_id}",
-        "report_schema_version": "1.0",
+        "report_schema_version": FORMAL_REPORT_SCHEMA_VERSION,
         "created_at": _utc_now_iso(),
         "measurement_date": _utc_now_iso(),
         "test_object": {

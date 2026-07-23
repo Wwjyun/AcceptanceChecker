@@ -38,12 +38,14 @@ from ..core import (
     Severity,
     WorkflowError,
     WorkflowStep,
+    load_default_v4_spec,
 )
 from ..reporting import (
     build_formal_report,
     export_formal_report,
     load_report_config,
 )
+from ..versions import FORMAL_V4_SUPPORT_STATUS
 
 _STEP_INDEX = {
     WorkflowStep.EMPTY: 0,
@@ -76,8 +78,10 @@ class SessionWorkflowWidget(QWidget):
     def _build_ui(self) -> None:
         root = QVBoxLayout(self)
         banner = QLabel(
-            "<b>正式 v4 驗收 Session</b>　"
-            "所有分級均保留證據來源；證據不足不會被判為通過。"
+            "<b>v4 驗收 Session 候選流程</b>　"
+            "所有分級均保留證據來源；證據不足不會被判為通過。<br>"
+            "<span style='color:#ffd166'>規格為 draft_unapproved；發布狀態："
+            f"{FORMAL_V4_SUPPORT_STATUS}，目前不得宣稱正式 v4 支援。</span>"
         )
         banner.setStyleSheet(
             "background:#173b57;color:white;padding:10px;border-radius:4px;"
@@ -195,6 +199,7 @@ class SessionWorkflowWidget(QWidget):
         self._guard(lambda: self.create_manifest_template(path, machine_id.strip()))
 
     def create_manifest_template(self, path: str, machine_id: str) -> None:
+        specification = load_default_v4_spec()
         lock = PreconditionLock(
             camera={
                 "model": "待填",
@@ -250,7 +255,7 @@ class SessionWorkflowWidget(QWidget):
             },
             computation={
                 "roi_version": "待填",
-                "formula_version": "v4-formula-1",
+                "formula_version": specification.formula_version,
                 "script_version": "待填",
             },
             data={
@@ -263,7 +268,7 @@ class SessionWorkflowWidget(QWidget):
             machine_id=machine_id,
             optical_mode=self.mode_combo.currentData(),
             precondition_lock=lock,
-            spec_version="v4-discussion-2026-07-23",
+            spec_version=specification.spec_version,
         )
         manifest.save_json(path)
         self.load_manifest(path)
@@ -426,7 +431,10 @@ class SessionWorkflowWidget(QWidget):
         session = self.workflow.session
         if session:
             for item in session.measurements:
-                if item.severity == Severity.NOT_EVALUATED:
+                if (
+                    item.severity == Severity.NOT_EVALUATED
+                    and not item.metadata.get("non_graded", False)
+                ):
                     self._append_row(
                         self.gap_table,
                         (

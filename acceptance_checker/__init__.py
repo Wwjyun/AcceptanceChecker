@@ -9,7 +9,15 @@ AOI Raw Image 光學驗收檢查工具 (OOP 版)
 - cli       : 命令列批次工具
 """
 
-__version__ = "0.1.0"
+from .versions import (
+    DEFAULT_SPEC_VERSION,
+    FORMAL_REPORT_SCHEMA_VERSION,
+    FORMAL_V4_SUPPORT_STATUS,
+    LEGACY_MIGRATION_SCHEMA_VERSION,
+    PACKAGE_VERSION,
+)
+
+__version__ = PACKAGE_VERSION
 
 from .core import (
     LEGACY_REFERENCE_NOTICE,
@@ -80,6 +88,9 @@ from .core import (
     PowerLawFit,
     PreconditionLock,
     RawImage,
+    ReleaseReadiness,
+    ReleaseReadinessError,
+    ReleaseReviewSignoff,
     ResponsibilityAction,
     ResponsibilityAnalyzer,
     ResponsibilityError,
@@ -111,6 +122,7 @@ from .core import (
     TemporalMeasurementReport,
     TemporalSeries,
     ThreePartyPosition,
+    ThreePartyReleaseReview,
     Thresholds,
     TraceabilityReport,
     TraceabilityValidator,
@@ -131,6 +143,7 @@ from .core import (
     build_dataset_manifest,
     build_image_evidence,
     clopper_pearson_upper,
+    evaluate_release_readiness,
     extract_rois,
     legacy_metrics_to_measurements,
     load_default_v4_spec,
@@ -288,6 +301,9 @@ __all__ = [
     "DiagnosticAttachment",
     "EvidenceCheck",
     "EvidenceIssue",
+    "ReleaseReadiness",
+    "ReleaseReadinessError",
+    "ReleaseReviewSignoff",
     "LogLogAnalysisError",
     "LogLogAnalysisResult",
     "LogLogAnalyzer",
@@ -299,4 +315,11 @@ __all__ = [
     "ReviewParty",
     "TechnicalObjection",
     "ThreePartyPosition",
+    "ThreePartyReleaseReview",
+    "evaluate_release_readiness",
+    "PACKAGE_VERSION",
+    "DEFAULT_SPEC_VERSION",
+    "FORMAL_REPORT_SCHEMA_VERSION",
+    "LEGACY_MIGRATION_SCHEMA_VERSION",
+    "FORMAL_V4_SUPPORT_STATUS",
 ]

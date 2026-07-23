@@ -65,7 +65,7 @@ class ImageAnalyzer:
         return m, sample, defect
 
     def _fill_gray_stats(self, m: Metrics, sample: np.ndarray) -> None:
-        arr = sample.astype(np.float32)
+        arr: np.ndarray = sample.astype(np.float32)
         m.mean_gray = float(np.mean(arr))
         m.std_gray = float(np.std(arr))
         m.min_gray = float(np.min(arr))
@@ -120,7 +120,7 @@ class ImageAnalyzer:
 
         數值越高，代表固定方向亮度變化越強（FPN / 條紋 / 照明不均）。
         """
-        img = sample.astype(np.float32)
+        img: np.ndarray = sample.astype(np.float32)
         global_std = float(np.std(img))
         if global_std < 1e-6:
             return 0.0, 0.0

@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
 
 from .dataset_manifest import AcceptanceDatasetManifest, sha256_file
+from .specification import load_default_v4_spec
 from .v4_domain import (
     AcceptanceManifest,
     AcceptanceSession,
@@ -187,9 +188,27 @@ class SessionWorkflow:
 
         session = self._require_session()
         package_hash = sha256_file(path)
-        session.measurements = [
+        measurements = [
             MeasurementResult.from_dict(dict(item)) for item in raw_measurements
         ]
+        actual_ids = [item.metric_id for item in measurements]
+        duplicates = sorted(
+            {metric_id for metric_id in actual_ids if actual_ids.count(metric_id) > 1}
+        )
+        expected_ids = {
+            item.metric_id
+            for item in load_default_v4_spec().metrics_for_mode(
+                session.manifest.optical_mode
+            )
+        }
+        missing = sorted(expected_ids - set(actual_ids))
+        unknown = sorted(set(actual_ids) - expected_ids)
+        if duplicates or missing or unknown:
+            raise WorkflowError(
+                "正式量測套件必須讓每個適用 metric 恰好出現一次；"
+                f"duplicates={duplicates}, missing={missing}, unknown={unknown}"
+            )
+        session.measurements = measurements
         self.priority_events = [
             _priority_event_from_dict(dict(item))
             for item in payload.get("priority_events", [])

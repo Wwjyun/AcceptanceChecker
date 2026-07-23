@@ -23,6 +23,7 @@ from ..reporting import (
     load_report_config,
     report_config_template,
 )
+from ..versions import FORMAL_V4_SUPPORT_STATUS
 
 logger = logging.getLogger("acceptance_checker.cli.v4")
 
@@ -58,7 +59,10 @@ def main(argv: Optional[List[str]] = None) -> int:
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="acceptance-checker-cli",
-        description="AcceptanceChecker 正式 v4 Session 工作流",
+        description=(
+            "AcceptanceChecker v4 Session 候選工作流 "
+            f"（發布狀態：{FORMAL_V4_SUPPORT_STATUS}）"
+        ),
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -160,7 +164,9 @@ def _measure(args: argparse.Namespace) -> int:
                 "session": str(Path(args.output).resolve()),
                 "measurement_count": len(session.measurements),
                 "priority_event_count": len(workflow.priority_events),
-                "formal_v4": True,
+                "formal_workflow": True,
+                "official_v4_support": False,
+                "support_status": FORMAL_V4_SUPPORT_STATUS,
             },
             ensure_ascii=False,
             indent=2,
@@ -278,9 +284,12 @@ def _write_text(path: str, content: str) -> None:
 
 
 def top_level_help() -> str:
-    return """AcceptanceChecker
+    return f"""AcceptanceChecker
 
-正式 v4 Session 子命令：
+發布狀態：{FORMAL_V4_SUPPORT_STATUS}
+目前規格是 draft_unapproved；可完整驗證與產生候選報告，但不得宣稱正式 v4 支援。
+
+v4 Session 候選流程子命令：
   validate-manifest  驗證 manifest、前提鎖定與證據檔
   measure            執行／匯入 G1-G6 量測套件
   judge              依第 13.2 節產生正式判定

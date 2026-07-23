@@ -7,7 +7,9 @@ import csv
 import json
 from dataclasses import MISSING, dataclass, fields
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Sequence
+
+from acceptance_checker.versions import LEGACY_MIGRATION_SCHEMA_VERSION
 
 from .config import Thresholds
 from .legacy_adapter import LegacyMetricsAdapter
@@ -25,7 +27,7 @@ class LegacyMigrationBundle:
     source_type: str
     source_path: str
     records: List[Dict[str, Any]]
-    schema_version: str = "legacy-migration-1.0"
+    schema_version: str = LEGACY_MIGRATION_SCHEMA_VERSION
     engineering_reference_only: bool = True
     formal_v4_grade_allowed: bool = False
     notice: str = LEGACY_REFERENCE_NOTICE
@@ -102,7 +104,7 @@ def migrate_legacy_csv(
     )
 
 
-def _detect_csv_type(fieldnames: List[str]) -> str:
+def _detect_csv_type(fieldnames: Sequence[str]) -> str:
     names = set(fieldnames)
     if {"file_name", "width_px", "quality_score", "overall_status"} <= names:
         return "legacy_metrics_csv"

@@ -1,13 +1,19 @@
 # AcceptanceChecker
 
-AcceptanceChecker is a Python AOI raw-image acceptance tool. It analyzes inspection images, computes image-quality and defect metrics, scores each image on a weighted 100-point scale, and reports the production risk level for engineering review.
+AcceptanceChecker is a Python AOI raw-image acceptance tool. It provides a versioned
+v4 Session candidate workflow and retains the original weighted single-image score as
+a separate legacy engineering aid.
+
+> Release status: `pending_three_party_review`. The packaged specification is
+> `draft_unapproved`, so the software can exercise and verify the complete workflow
+> but must not yet be represented as officially approved v4 support.
 
 **Design philosophy — the score is a signal, not a gate.** In practice, an AOI image or batch almost always has to be accepted regardless of its score; rejecting it usually is not practically enforceable further downstream. So `quality_score` / `risk_level` are not designed to block anything — they exist to make it easy to (1) prioritize which engineering issue to fix first, (2) tell "barely bad" apart from "badly bad" at a glance, (3) keep a durable trail of scores and human override reasons across time, and (4) spot slow trend degradation across batches. See [Risk Communication Design](#risk-communication-design-score-as-signal-not-gate) for the concrete features that follow from this.
 
 The project provides:
 
-- A PySide6 desktop GUI whose default tab guides a formal v4 Session from manifest and evidence checks through measurement, ordered judgment, evidence-gap review, provenance, and report export.
-- A composable formal CLI (`validate-manifest`, `measure`, `judge`, `report`) plus a clearly separated legacy quick-check CLI for single-image engineering analysis.
+- A PySide6 desktop GUI whose default tab guides a v4 Session candidate from manifest and evidence checks through measurement, ordered judgment, evidence-gap review, provenance, and report export.
+- A composable v4 candidate CLI (`validate-manifest`, `measure`, `judge`, `report`) plus a clearly separated legacy quick-check CLI for single-image engineering analysis.
 - A reusable Python API under `acceptance_checker`.
 - Pytest, Ruff, Mypy, and an offscreen GUI smoke test for validation.
 
@@ -31,7 +37,8 @@ pip install -e ".[dev]"
 
 ## Quick Start
 
-Run the GUI (it opens on the formal v4 Session workflow):
+Run the GUI (it opens on the v4 Session candidate workflow and shows the
+current draft/review status):
 
 ```bash
 python main.py
@@ -94,9 +101,9 @@ CLI exit codes:
 
 `--no-gate` does not change the report text, `risk_level`, or CSV output — it only changes whether exit code `1` is ever returned. Use it when the exit code is consumed by automation that should not fail a build/pipeline purely because an image scored low; keep the default behavior when a human or script genuinely wants to know "did anything fail" via the process exit code.
 
-### Formal v4 CLI workflow
+### v4 Session candidate CLI workflow
 
-The formal workflow is composable, so every intermediate artifact can be reviewed or
+The workflow is composable, so every intermediate artifact can be reviewed or
 recomputed:
 
 ```bash
@@ -107,14 +114,26 @@ python -m acceptance_checker.cli report judged-session.json --write-config-templ
 python -m acceptance_checker.cli report judged-session.json --config report-config.json --output-dir reports
 ```
 
-`measurements.json` is the machine-readable output package from the formal G1–G6 measurers; it
+`measurements.json` is the machine-readable output package from the G1–G6 measurers; it
 contains `measurements` and optional `priority_events`. The command validates the dataset files
 and hashes before importing those results. It never treats legacy `quality_score` values as v4
 measurements. The report command requires the test object, optical declaration, improvements,
-artifact manifest, and all three imaging/software/quality signoffs in its reviewed config.
+artifact manifest, and all three imaging/software/quality Session-report signoffs in its
+reviewed config. These do not replace the separate project-level release review.
 
-For formal `judge` and `report`, `--no-gate` only changes the process exit code. The serialized
+For `judge` and `report`, `--no-gate` only changes the process exit code. The serialized
 `OverallResult`, matched rule, reasons, and report wording remain byte-for-byte the same.
+
+Run the complete synthetic example, including a deliberately rejected S1 result
+and waiver:
+
+```powershell
+.\env\Scripts\python.exe examples\run_v4_demo.py --output-dir demo-output
+```
+
+The command creates a matching manifest, 45-metric G1–G6 package, judged
+Session, report config, JSON/HTML/PDF report, waiver, and summary. All example
+signoffs say `DEMO ONLY` and are not approvals.
 
 ### Legacy data migration
 
@@ -524,7 +543,7 @@ immediately invalidates the waiver. `WaiverTrackingReport` records 30-day
 hardware progress, remaining work, actual misses/false calls, current metrics,
 new S1/S0 items, and evidence; overdue tracking removes extension eligibility.
 
-## v4 formal acceptance report
+## v4 candidate acceptance report
 
 `FormalAcceptanceReport` implements all nine section 16.1 chapters: test object,
 optical declaration, precondition lock, G1–G6 measurements, ordered decision,
@@ -542,6 +561,18 @@ a detail export only. Every formal report carries the immutable statement that
 its thresholds are internal engineering control limits, not ISO-mandated
 acceptance thresholds.
 
+Package, specification, and report contracts are versioned independently:
+
+- package API: `acceptance_checker.__version__` / `PACKAGE_VERSION`
+- default control specification: `DEFAULT_SPEC_VERSION`
+- report JSON contract: `FORMAL_REPORT_SCHEMA_VERSION`
+
+`evaluate_release_readiness()` keeps official support at
+`pending_three_party_review` until the specification is approved with an
+effective date and one identified imaging, software, and quality reviewer has
+approved the formulas, evidence requirements, and report content. The review
+record template is in `THREE_PARTY_RELEASE_REVIEW.md`.
+
 ### v4 verification assets
 
 - `tests/data/excel_control_rows.json` is a read-only extraction of workbook sheet
@@ -555,6 +586,9 @@ acceptance thresholds.
   not committed as large artifacts and are recreated deterministically in tests.
 - `acceptance_checker/schemas/formal_report_v1.schema.json` is the JSON Schema contract for
   formal report schema `1.0`; snapshot and Draft 2020-12 validation tests protect compatibility.
+- `examples/run_v4_demo.py` is an executable manifest → G1–G6 → section 13.2 →
+  report → waiver example. `tests/test_v4_complete_demo.py` verifies that its
+  generated manifest and report remain consistent.
 
 Run the default large Line Scan / 30-frame temporal benchmark:
 
@@ -592,6 +626,12 @@ python smoketest.py
 ```
 
 On Linux CI, `QT_QPA_PLATFORM=offscreen` is used for the smoke test.
+
+Run the complete Windows validation, treating Mypy as a required gate:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File C:\Users\王\.codex\skills\acceptance-checker\scripts\validate_project.ps1 -StrictMypy
+```
 
 ## Project Layout
 

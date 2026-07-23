@@ -130,5 +130,5 @@ def test_report_command_writes_template_and_formal_json_html(tmp_path):
 def test_top_level_help_marks_legacy_as_non_formal(capsys):
     assert main(["--help"]) == 0
     output = capsys.readouterr().out
-    assert "正式 v4 Session" in output
+    assert "v4 Session 候選流程" in output
     assert "不是完整 v4 驗收" in output

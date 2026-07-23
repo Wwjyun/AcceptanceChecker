@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional, Sequence
 
 from acceptance_checker.core.dataset_manifest import PreconditionLock
 from acceptance_checker.core.loglog_analysis import LogLogAnalysisResult
+from acceptance_checker.core.release_readiness import evaluate_release_readiness
 from acceptance_checker.core.responsibility import (
     ResponsibilityReport,
     ReviewParty,
@@ -26,6 +27,7 @@ from acceptance_checker.core.specification import (
 )
 from acceptance_checker.core.v4_domain import AcceptanceSession
 from acceptance_checker.core.v4_judge import V4Decision
+from acceptance_checker.versions import FORMAL_REPORT_SCHEMA_VERSION
 
 
 class FormalReportError(ValueError):
@@ -138,6 +140,11 @@ class FormalAcceptanceReport:
     def __post_init__(self) -> None:
         if not self.report_id or not self.report_schema_version:
             raise FormalReportError("report id and schema version are required")
+        if self.report_schema_version != FORMAL_REPORT_SCHEMA_VERSION:
+            raise FormalReportError(
+                "unsupported formal report schema version: "
+                f"{self.report_schema_version}"
+            )
         for value, label in (
             (self.created_at, "created_at"),
             (self.measurement_date, "measurement_date"),
@@ -226,6 +233,16 @@ class FormalAcceptanceReport:
             }
             for item in self.diagnostics
         ]
+        decision_content = _primitive(self.decision)
+        readiness = evaluate_release_readiness(self.specification)
+        decision_content.update(
+            {
+                "specification_status": self.specification.status,
+                "official_v4_support": readiness.official_v4_support,
+                "support_status": readiness.status,
+                "release_readiness_reasons": list(readiness.reasons),
+            }
+        )
         sections = [
             {"number": 1, "title": "受驗標的", "content": _primitive(self.test_object)},
             {
@@ -246,7 +263,7 @@ class FormalAcceptanceReport:
             {
                 "number": 5,
                 "title": "整體判定",
-                "content": _primitive(self.decision),
+                "content": decision_content,
             },
             {"number": 6, "title": "成因診斷", "content": diagnostic_rows},
             {
@@ -546,7 +563,7 @@ Generated {html.escape(self.created_at)}</footer>
 def _primitive(value: Any) -> Any:
     if isinstance(value, Enum):
         return value.value
-    if is_dataclass(value):
+    if is_dataclass(value) and not isinstance(value, type):
         return _primitive(asdict(value))
     if isinstance(value, dict):
         return {str(key): _primitive(item) for key, item in value.items()}

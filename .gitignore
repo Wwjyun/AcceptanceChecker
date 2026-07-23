@@ -6,3 +6,5 @@ __pycache__/
 acceptance_checker.egg-info/
 build/
 dist/
+/tmp/
+/demo-output/

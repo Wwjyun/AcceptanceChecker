@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """快速工程檢查：不開 GUI，對一或多張圖輸出 legacy 分數與 CSV。
 
-此入口不是完整 v4 驗收；正式流程請使用 validate-manifest、measure、
+此入口不是完整 v4 驗收；v4 候選流程請使用 validate-manifest、measure、
 judge、report 等可組合子命令。
 
 用法：

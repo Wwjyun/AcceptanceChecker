@@ -63,7 +63,7 @@ class AcceptanceCheckerWindow(QMainWindow):
         self._worker: Optional[AnalysisWorker] = None
 
         self._ensure_cjk_font()
-        self.setWindowTitle("AcceptanceChecker｜正式 v4 驗收與快速工程檢查")
+        self.setWindowTitle("AcceptanceChecker｜v4 候選驗收流程與快速工程檢查")
         self.resize(1280, 820)
         self._build_ui()
 
@@ -91,7 +91,7 @@ class AcceptanceCheckerWindow(QMainWindow):
         self.mode_tabs = QTabWidget()
         root.addWidget(self.mode_tabs)
         self.session_workflow = SessionWorkflowWidget()
-        self.mode_tabs.addTab(self.session_workflow, "正式 v4 Session")
+        self.mode_tabs.addTab(self.session_workflow, "v4 Session 候選流程")
 
         quick_check = QWidget()
         quick_root = QVBoxLayout(quick_check)

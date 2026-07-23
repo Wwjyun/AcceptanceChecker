@@ -208,22 +208,26 @@ class TraceabilityValidator:
                 )
         sequence = metadata.get("image_sequence_id")
         if not TraceabilityValidator._missing(sequence):
-            key = str(sequence)
-            owner = sequence_owners.setdefault(key, image.relative_path)
-            if owner != image.relative_path:
+            sequence_key = str(sequence)
+            sequence_owner = sequence_owners.setdefault(sequence_key, image.relative_path)
+            if sequence_owner != image.relative_path:
                 fatal.append(
-                    f"image_sequence_id {key} 同時配對 {owner} 與 {image.relative_path}"
+                    "image_sequence_id "
+                    f"{sequence_key} 同時配對 {sequence_owner} 與 {image.relative_path}"
                 )
         timestamp = metadata.get("timestamp")
         camera = metadata.get("camera_id")
         if not TraceabilityValidator._missing(timestamp) and not TraceabilityValidator._missing(
             camera
         ):
-            key = (str(timestamp), str(camera))
-            owner = timestamp_owners.setdefault(key, image.relative_path)
-            if owner != image.relative_path:
+            timestamp_key = (str(timestamp), str(camera))
+            timestamp_owner = timestamp_owners.setdefault(
+                timestamp_key, image.relative_path
+            )
+            if timestamp_owner != image.relative_path:
                 fatal.append(
-                    f"timestamp/camera ID {key} 同時配對 {owner} 與 {image.relative_path}"
+                    "timestamp/camera ID "
+                    f"{timestamp_key} 同時配對 {timestamp_owner} 與 {image.relative_path}"
                 )
 
     @staticmethod

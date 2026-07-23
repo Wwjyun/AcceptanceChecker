@@ -14,6 +14,8 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
+from acceptance_checker.versions import DEFAULT_SPEC_VERSION
+
 
 class OpticalMode(str, Enum):
     """由光學幾何宣告的取像模式。"""
@@ -77,7 +79,7 @@ class AcceptanceManifest:
     machine_id: str
     optical_mode: OpticalMode
     session_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    spec_version: str = "v4-draft"
+    spec_version: str = DEFAULT_SPEC_VERSION
     schema_version: str = "1.0"
     created_at: str = field(default_factory=_utc_now_iso)
     precondition_lock: Any = field(default_factory=dict)
